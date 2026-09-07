@@ -45,6 +45,7 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
         AND uploader_url = :uploaderUrl
         AND uploader_avatar_url IS NOT NULL
         AND TRIM(uploader_avatar_url) != ''
+        ORDER BY uid ASC
         LIMIT 1
         """
     )
