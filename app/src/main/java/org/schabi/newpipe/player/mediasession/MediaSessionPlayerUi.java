@@ -29,7 +29,6 @@ import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.StreamTypeUtil;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -42,6 +41,8 @@ public class MediaSessionPlayerUi extends PlayerUi
     private final androidx.media3.common.Player browserPlayer;
 
     private final String ignoreHardwareMediaButtonsKey;
+    @NonNull
+    private final List<String> notificationActionKeys;
     private boolean shouldIgnoreHardwareMediaButtons = false;
 
     // used to check whether any notification action changed, before sending costly updates
@@ -56,6 +57,9 @@ public class MediaSessionPlayerUi extends PlayerUi
         this.browserPlayer = browserPlayer;
         this.ignoreHardwareMediaButtonsKey =
                 context.getString(R.string.ignore_hardware_media_buttons_key);
+        this.notificationActionKeys = IntStream.of(3, 4)
+                .mapToObj(i -> context.getString(NotificationConstants.SLOT_PREF_KEYS[i]))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -98,6 +102,9 @@ public class MediaSessionPlayerUi extends PlayerUi
                                           final String key) {
         if (key == null || key.equals(ignoreHardwareMediaButtonsKey)) {
             updateShouldIgnoreHardwareMediaButtons(sharedPreferences);
+        }
+        if (key == null || notificationActionKeys.contains(key)) {
+            updateMediaSessionActions();
         }
     }
 
@@ -205,16 +212,19 @@ public class MediaSessionPlayerUi extends PlayerUi
 
         // only use the fourth and fifth actions (the settings page also shows only the last 2 on
         // Android 13+)
+        // Keep null placeholders for actions configured as "Nothing". Dropping them here would
+        // shift the other action into the wrong button slot and make configurations with the same
+        // non-empty actions but different positions compare as equal.
         final List<NotificationActionData> newNotificationActions = IntStream.of(3, 4)
                 .map(i -> player.getPrefs().getInt(
                         player.getContext().getString(NotificationConstants.SLOT_PREF_KEYS[i]),
                         NotificationConstants.SLOT_DEFAULTS[i]))
                 .mapToObj(action -> NotificationActionData
                         .fromNotificationActionEnum(player, action))
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         final List<CommandButton> buttons = IntStream.range(0, newNotificationActions.size())
+                .filter(index -> newNotificationActions.get(index) != null)
                 .mapToObj(index -> MediaSessionActionProvider.buttonFor(
                         newNotificationActions.get(index), index == 0))
                 .collect(Collectors.toList());
