@@ -44,6 +44,8 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         setupCaptionTranslationPreferences();
         requirePreference(R.string.native_pip_key)
                 .setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
+        requirePreference(R.string.primary_floating_player_action_key)
+                .setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         listener = (sharedPreferences, key) -> {
 
             // on M and above, if user chooses to minimise to popup player on exit
