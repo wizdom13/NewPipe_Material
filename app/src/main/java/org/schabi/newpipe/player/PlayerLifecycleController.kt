@@ -141,12 +141,15 @@ internal class PlayerLifecycleController(
         if (Player.DEBUG) Log.d(Player.TAG, "destroyPlayer() called")
         errorController.resetRecovery()
         historyController.stopLearningSession()
+        val exoPlayer = player.getExoPlayer()
+        // Stop receiving playback errors before UIs detach their video surfaces. Media3 may report
+        // a surface-detach timeout while the player is deliberately shutting down; surfacing that
+        // expected teardown failure would show an erroneous playback error to the user.
+        exoPlayer?.removeListener(player)
         player.UIs().call(PlayerUi::destroyPlayer)
         audioController.releaseAudioSession()
-        if (!player.exoPlayerIsNull()) {
-            val exoPlayer = player.exoPlayer
+        if (exoPlayer != null) {
             try {
-                exoPlayer.removeListener(player)
                 exoPlayer.stop()
                 exoPlayer.release()
             } finally {
