@@ -435,12 +435,15 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             // Restore video source when user returns to the fragment
             fragmentIsVisible = true;
             player.useVideoAndSubtitles(true);
+            restoreVideoSurfaceAfterResume();
 
             // When a user returns from background, the system UI will always be shown even if
             // controls are invisible: hide it in that case
             if (!isControlsVisible()) {
                 hideSystemUIIfNeeded();
             }
+        } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction()) && fragmentIsVisible) {
+            restoreVideoSurfaceAfterResume();
         }
     }
     //endregion
