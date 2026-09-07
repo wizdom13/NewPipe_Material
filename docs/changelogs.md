@@ -4,6 +4,30 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.15.1 (`1015001`)
+
+### New features
+
+- Added a setting to choose whether Android Picture-in-Picture or Popup Player is the primary
+  floating-player action while keeping the other action available in the secondary controls.
+
+### Improvements
+
+- Strengthened player, extractor, and CI regression coverage and migrated additional low-risk
+  components to Kotlin.
+- Improved local folder and playlist artwork handling, including deterministic avatar reuse.
+
+### Fixes
+
+- Fixed notification button configurations not applying reliably, including empty and reordered
+  action slots.
+- Prevented cold-start media-button broadcasts from causing a foreground-service timeout crash.
+- Prevented video-surface detach timeouts during player teardown from being reported as playback
+  crashes.
+- Kept the active video visible above scrolling details and corrected local folder artwork tinting.
+
+[View the complete changes since v1.15.0](https://github.com/wizdom13/WizeStream/compare/v1.15.0...v1.15.1)
+
 ## WizeStream 1.15.0 (`1015000`)
 
 ### New features
