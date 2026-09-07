@@ -124,6 +124,16 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
+        <ListPreference
+            android:defaultValue="@string/primary_floating_player_action_pip_value"
+            android:entries="@array/primary_floating_player_action_entries"
+            android:entryValues="@array/primary_floating_player_action_values"
+            android:key="@string/primary_floating_player_action_key"
+            android:title="@string/primary_floating_player_action_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/use_external_audio_player_key"
