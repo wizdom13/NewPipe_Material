@@ -8,7 +8,9 @@ package org.schabi.newpipe;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 import org.junit.Test;
 
@@ -19,6 +21,20 @@ import okhttp3.RequestBody;
 import okio.Buffer;
 
 public class DownloaderImplTest {
+    @Test
+    public void parsedUrlsAreReusedAndBounded() {
+        final DownloaderImpl downloader = DownloaderImpl.init(null);
+        final String repeatedUrl = "https://www.youtube.com/youtubei/v1/next?prettyPrint=false";
+
+        assertSame(downloader.parseUrl(repeatedUrl), downloader.parseUrl(repeatedUrl));
+
+        final Object firstUrl = downloader.parseUrl("https://example.com/0");
+        for (int i = 1; i <= DownloaderImpl.PARSED_URL_CACHE_SIZE; i++) {
+            downloader.parseUrl("https://example.com/" + i);
+        }
+        assertNotSame(firstUrl, downloader.parseUrl("https://example.com/0"));
+    }
+
     @Test
     public void postWithoutDataUsesEmptyRequestBody() throws IOException {
         final RequestBody requestBody = DownloaderImpl.buildRequestBody("POST", null);
