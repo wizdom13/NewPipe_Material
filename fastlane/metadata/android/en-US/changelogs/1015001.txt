@@ -1,0 +1,6 @@
+• Choose PiP or Popup Player as the primary floating action.
+• Fixed notification button configurations not applying reliably.
+• Prevented media-button foreground-service timeout crashes.
+• Prevented player teardown surface errors from appearing as playback crashes.
+• Improved local folder and playlist artwork.
+• Kept the active video visible above scrolling details.
