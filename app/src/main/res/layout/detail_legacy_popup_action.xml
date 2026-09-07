@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <org.schabi.newpipe.views.NewPipeTextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/detail_controls_legacy_popup"
+    android:id="@+id/detail_controls_secondary_floating_player"
     style="@style/VideoDetailActionText"
     android:layout_width="@dimen/detail_control_width"
     android:layout_height="@dimen/detail_control_height"
