@@ -242,6 +242,9 @@ public final class DownloaderImpl extends Downloader {
      * Reuses parsed URLs so repeated extractor requests do not repeatedly enter OkHttp's hostname
      * canonicalizer. Apart from avoiding duplicate work, this works around an Android Runtime JIT
      * crash observed on some Android 16 custom-ROM builds while that Kotlin method becomes hot.
+     *
+     * @param url the absolute request URL
+     * @return the cached or newly parsed OkHttp URL
      */
     @NonNull
     HttpUrl parseUrl(@NonNull final String url) {
