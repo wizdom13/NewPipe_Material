@@ -28,22 +28,24 @@ public class NativePipButtonIntegrationTest {
     }
 
     @Test
-    public void primaryPlayerActionUsesNativePipWithPopupFallback() throws Exception {
+    public void primaryPlayerActionUsesConfiguredFloatingPlayerPreference() throws Exception {
         final String source = readSource("org/schabi/newpipe/views/NewPipeTextView.java");
         final String clickListener = methodBody(source, "public void setOnClickListener(");
 
-        assertTrue(clickListener.contains("enterNativePictureInPicture()"));
-        assertTrue(clickListener.contains("legacyPopupClickListener.onClick(view)"));
+        assertTrue(clickListener.contains("configureFloatingPlayerActions()"));
+        assertTrue(source.contains("FloatingPlayerActionPreference.primaryAction"));
+        assertTrue(source.contains("enterNativePictureInPicture()"));
+        assertTrue(source.contains("popupClickListener.onClick(view)"));
         assertTrue(source.contains("R.id.detail_controls_popup"));
         assertTrue(source.contains("R.layout.detail_legacy_popup_action"));
     }
 
     @Test
-    public void legacyPopupRemainsASeparateSecondaryAction() throws Exception {
+    public void alternateFloatingPlayerActionUsesASeparateSecondaryControl() throws Exception {
         final String layout = Files.readString(
                 resourceDirectory.resolve("layout/detail_legacy_popup_action.xml"));
 
-        assertTrue(layout.contains("@+id/detail_controls_legacy_popup"));
+        assertTrue(layout.contains("@+id/detail_controls_secondary_floating_player"));
         assertTrue(layout.contains("@string/controls_popup_title"));
         assertTrue(layout.contains("@drawable/ic_smart_display"));
     }

@@ -227,6 +227,11 @@
     <string name="popup_remember_size_pos_summary">Remember last size and position of popup</string>
     <string name="native_pip_title">Android picture-in-picture</string>
     <string name="native_pip_summary">Keep visible video playback in the system picture-in-picture window when leaving WizeStream</string>
+    <string name="primary_floating_player_action_title">Primary floating player action</string>
+    <string-array name="primary_floating_player_action_entries">
+        <item>@string/controls_pip_title</item>
+        <item>@string/controls_popup_title</item>
+    </string-array>
     <string name="use_inexact_seek_title">Use fast inexact seek</string>
     <string name="use_inexact_seek_summary">Inexact seek allows the player to seek to positions faster with reduced precision. Seeking for 5, 15 or 25 seconds doesn\'t work with this</string>
     <string name="seek_duration_title">Fast-forward/-rewind seek duration</string>

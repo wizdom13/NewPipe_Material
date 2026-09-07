@@ -2,6 +2,7 @@ package org.schabi.newpipe.views;
 
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.os.Build;
 import android.text.method.MovementMethod;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -12,8 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatTextView;
+import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.player.pip.FloatingPlayerActionPreference;
+import org.schabi.newpipe.player.pip.FloatingPlayerActionPreference.Action;
 import org.schabi.newpipe.player.pip.NativePipController;
 import org.schabi.newpipe.util.NewPipeTextViewHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
@@ -30,11 +34,11 @@ import org.schabi.newpipe.util.external_communication.ShareUtils;
  */
 public class NewPipeTextView extends AppCompatTextView {
     @Nullable
-    private OnClickListener legacyPopupClickListener;
+    private OnClickListener popupClickListener;
     @Nullable
-    private OnLongClickListener legacyPopupLongClickListener;
+    private OnLongClickListener popupLongClickListener;
     @Nullable
-    private OnTouchListener legacyPopupTouchListener;
+    private OnTouchListener popupTouchListener;
 
     public NewPipeTextView(@NonNull final Context context) {
         super(context);
@@ -67,15 +71,8 @@ public class NewPipeTextView extends AppCompatTextView {
             return;
         }
 
-        legacyPopupClickListener = listener;
-        setText(R.string.controls_pip_title);
-        setContentDescription(getContext().getString(R.string.enter_picture_in_picture));
-        super.setOnClickListener(view -> {
-            if (!enterNativePictureInPicture() && legacyPopupClickListener != null) {
-                legacyPopupClickListener.onClick(view);
-            }
-        });
-        post(this::ensureLegacyPopupAction);
+        popupClickListener = listener;
+        configureFloatingPlayerActions();
     }
 
     @Override
@@ -85,9 +82,8 @@ public class NewPipeTextView extends AppCompatTextView {
             return;
         }
 
-        legacyPopupLongClickListener = listener;
-        super.setOnLongClickListener(null);
-        post(this::ensureLegacyPopupAction);
+        popupLongClickListener = listener;
+        configureFloatingPlayerActions();
     }
 
     @Override
@@ -97,16 +93,23 @@ public class NewPipeTextView extends AppCompatTextView {
             return;
         }
 
-        legacyPopupTouchListener = listener;
-        super.setOnTouchListener(null);
-        post(this::ensureLegacyPopupAction);
+        popupTouchListener = listener;
+        configureFloatingPlayerActions();
     }
 
     @Override
     public void setVisibility(final int visibility) {
         super.setVisibility(visibility);
         if (isPrimaryDetailPipAction()) {
-            post(this::syncLegacyPopupVisibility);
+            post(this::configureFloatingPlayerActions);
+        }
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(final int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        if (visibility == View.VISIBLE && isPrimaryDetailPipAction()) {
+            post(this::configureFloatingPlayerActions);
         }
     }
 
@@ -130,10 +133,37 @@ public class NewPipeTextView extends AppCompatTextView {
         return false;
     }
 
-    private void ensureLegacyPopupAction() {
+    private void configureFloatingPlayerActions() {
         if (!isPrimaryDetailPipAction()) {
             return;
         }
+
+        final Action primaryAction = getPrimaryFloatingPlayerAction();
+        configureAction(this, primaryAction, true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ensureSecondaryFloatingPlayerAction(primaryAction);
+        } else {
+            final View secondaryAction = getRootView().findViewById(
+                    R.id.detail_controls_secondary_floating_player);
+            if (secondaryAction != null) {
+                secondaryAction.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    @NonNull
+    private Action getPrimaryFloatingPlayerAction() {
+        final String nativePipValue = getContext().getString(
+                R.string.primary_floating_player_action_pip_value);
+        final String configuredValue = PreferenceManager
+                .getDefaultSharedPreferences(getContext())
+                .getString(getContext().getString(
+                        R.string.primary_floating_player_action_key), nativePipValue);
+        return FloatingPlayerActionPreference.primaryAction(
+                Build.VERSION.SDK_INT, configuredValue, nativePipValue);
+    }
+
+    private void ensureSecondaryFloatingPlayerAction(@NonNull final Action primaryAction) {
         final View root = getRootView();
         final LinearLayout secondaryControls =
                 root.findViewById(R.id.detail_secondary_control_panel);
@@ -141,16 +171,15 @@ public class NewPipeTextView extends AppCompatTextView {
             return;
         }
 
-        View legacyPopup = root.findViewById(R.id.detail_controls_legacy_popup);
-        if (legacyPopup == null) {
-            legacyPopup = LayoutInflater.from(getContext()).inflate(
+        View secondaryAction = root.findViewById(R.id.detail_controls_secondary_floating_player);
+        if (secondaryAction == null) {
+            secondaryAction = LayoutInflater.from(getContext()).inflate(
                     R.layout.detail_legacy_popup_action, secondaryControls, false);
-            secondaryControls.addView(legacyPopup, 0);
+            secondaryControls.addView(secondaryAction, 0);
         }
-        legacyPopup.setOnClickListener(legacyPopupClickListener);
-        legacyPopup.setOnLongClickListener(legacyPopupLongClickListener);
-        legacyPopup.setOnTouchListener(legacyPopupTouchListener);
-        legacyPopup.setVisibility(getVisibility());
+        configureAction((NewPipeTextView) secondaryAction,
+                FloatingPlayerActionPreference.secondaryAction(primaryAction), false);
+        secondaryAction.setVisibility(getVisibility());
         if (getVisibility() == View.VISIBLE) {
             final View secondaryToggle = root.findViewById(
                     R.id.detail_toggle_secondary_controls_view);
@@ -160,19 +189,44 @@ public class NewPipeTextView extends AppCompatTextView {
         }
     }
 
-    private void syncLegacyPopupVisibility() {
-        final View root = getRootView();
-        final View legacyPopup = root.findViewById(R.id.detail_controls_legacy_popup);
-        if (legacyPopup != null) {
-            legacyPopup.setVisibility(getVisibility());
+    private void configureAction(@NonNull final NewPipeTextView actionView,
+                                 @NonNull final Action action,
+                                 final boolean allowPopupFallback) {
+        if (action == Action.NATIVE_PIP) {
+            actionView.setText(R.string.controls_pip_title);
+            actionView.setContentDescription(
+                    getContext().getString(R.string.enter_picture_in_picture));
+            actionView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0, R.drawable.ic_picture_in_picture, 0, 0);
+            actionView.superSetOnClickListener(view -> {
+                if (!enterNativePictureInPicture()
+                        && allowPopupFallback && popupClickListener != null) {
+                    popupClickListener.onClick(view);
+                }
+            });
+            actionView.superSetOnLongClickListener(null);
+            actionView.superSetOnTouchListener(null);
+        } else {
+            actionView.setText(R.string.controls_popup_title);
+            actionView.setContentDescription(getContext().getString(R.string.open_in_popup_mode));
+            actionView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0, R.drawable.ic_smart_display, 0, 0);
+            actionView.superSetOnClickListener(popupClickListener);
+            actionView.superSetOnLongClickListener(popupLongClickListener);
+            actionView.superSetOnTouchListener(popupTouchListener);
         }
-        if (getVisibility() == View.VISIBLE) {
-            final View secondaryToggle = root.findViewById(
-                    R.id.detail_toggle_secondary_controls_view);
-            if (secondaryToggle != null) {
-                secondaryToggle.setVisibility(View.VISIBLE);
-            }
-        }
+    }
+
+    private void superSetOnClickListener(@Nullable final OnClickListener listener) {
+        super.setOnClickListener(listener);
+    }
+
+    private void superSetOnLongClickListener(@Nullable final OnLongClickListener listener) {
+        super.setOnLongClickListener(listener);
+    }
+
+    private void superSetOnTouchListener(@Nullable final OnTouchListener listener) {
+        super.setOnTouchListener(listener);
     }
 
     @Override
