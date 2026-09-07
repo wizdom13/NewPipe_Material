@@ -1133,6 +1133,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onRenderedFirstFrame() {
         super.onRenderedFirstFrame();
+        restoreVideoAspectRatioFromPlayer();
         //TODO check if this causes black screen when switching to fullscreen
         animate(binding.surfaceForeground, false, DEFAULT_CONTROLS_DURATION);
     }
@@ -1695,6 +1696,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
         super.onVideoSizeChanged(videoSize);
+        applyVideoAspectRatio(videoSize);
+    }
+
+    private void applyVideoAspectRatio(@NonNull final VideoSize videoSize) {
         final float displayAspectRatio = calculateDisplayAspectRatio(
                 videoSize.width, videoSize.height, videoSize.unappliedRotationDegrees,
                 videoSize.pixelWidthHeightRatio);
@@ -1702,6 +1707,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return;
         }
         binding.surfaceView.setAspectRatio(displayAspectRatio);
+    }
+
+    private void restoreVideoAspectRatioFromPlayer() {
+        final ExoPlayer exoPlayer = player.getExoPlayer();
+        if (exoPlayer != null) {
+            applyVideoAspectRatio(exoPlayer.getVideoSize());
+        }
     }
 
     static float calculateDisplayAspectRatio(final int width,
@@ -1758,6 +1770,25 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
             surfaceIsSetup = true;
         }
+    }
+
+    /**
+     * Recovers a retained video view after the display wakes. Some devices neither recreate the
+     * surface nor resend an unchanged video size, so explicitly restore both pieces of state once
+     * the resumed view has reached the UI queue.
+     */
+    protected final void restoreVideoSurfaceAfterResume() {
+        if (!player.getPlaybackPresentationMode().rendersVideo()) {
+            return;
+        }
+        setupVideoSurfaceIfNeeded();
+        binding.surfaceView.post(() -> {
+            if (binding.getRoot().getParent() == null || surfaceHolderCallback == null) {
+                return;
+            }
+            restoreVideoAspectRatioFromPlayer();
+            surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder());
+        });
     }
 
     private void clearVideoSurface() {

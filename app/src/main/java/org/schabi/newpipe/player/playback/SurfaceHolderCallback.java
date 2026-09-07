@@ -53,6 +53,21 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
         player.setVideoSurface(holder.getSurface());
     }
 
+    /**
+     * Rebinds the current surface after the display wakes if Android retained the view without
+     * dispatching a fresh surface callback.
+     *
+     * @param holder holder belonging to the visible player surface
+     * @return whether a valid surface was rebound
+     */
+    public boolean rebindVideoSurfaceIfValid(final SurfaceHolder holder) {
+        if (!holder.getSurface().isValid()) {
+            return false;
+        }
+        bindVideoSurface(holder);
+        return true;
+    }
+
     @Override
     public void surfaceDestroyed(final SurfaceHolder holder) {
         if (placeholderSurface == null) {
