@@ -38,6 +38,32 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
     @Query("UPDATE streams SET uploader_url = :uploaderUrl WHERE url = :url AND service_id = :serviceId")
     abstract fun setUploaderUrl(serviceId: Long, url: String, uploaderUrl: String): Completable
 
+    @Query(
+        """
+        SELECT uploader_avatar_url FROM streams
+        WHERE service_id = :serviceId
+        AND uploader_url = :uploaderUrl
+        AND uploader_avatar_url IS NOT NULL
+        AND TRIM(uploader_avatar_url) != ''
+        LIMIT 1
+        """
+    )
+    abstract fun findKnownUploaderAvatar(serviceId: Int, uploaderUrl: String): String?
+
+    @Query(
+        """
+        UPDATE streams SET uploader_avatar_url = :avatarUrl
+        WHERE service_id = :serviceId
+        AND uploader_url = :uploaderUrl
+        AND (uploader_avatar_url IS NULL OR TRIM(uploader_avatar_url) = '')
+        """
+    )
+    abstract fun backfillMissingUploaderAvatar(
+        serviceId: Int,
+        uploaderUrl: String,
+        avatarUrl: String
+    ): Int
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     internal abstract fun silentInsertInternal(stream: StreamEntity): Long
 

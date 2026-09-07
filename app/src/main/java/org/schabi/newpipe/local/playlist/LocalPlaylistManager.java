@@ -129,7 +129,12 @@ public class LocalPlaylistManager {
     }
 
     public Flowable<List<PlaylistStreamEntry>> getPlaylistStreams(final long playlistId) {
-        return playlistStreamTable.getOrderedStreamsOf(playlistId).subscribeOn(Schedulers.io());
+        return playlistStreamTable.getOrderedStreamsOf(playlistId)
+                .concatMapSingle(streams -> LocalPlaylistUploaderAvatarBackfill
+                        .backfill(database, streams)
+                        .toSingleDefault(streams)
+                        .onErrorReturnItem(streams))
+                .subscribeOn(Schedulers.io());
     }
 
     public Maybe<Integer> renamePlaylist(final long playlistId, final String name) {
