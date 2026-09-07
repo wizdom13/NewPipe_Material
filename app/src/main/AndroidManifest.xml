@@ -73,13 +73,9 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name="androidx.media3.session.MediaButtonReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-            </intent-filter>
-        </receiver>
+        <!-- MediaButtonReceiver must remain undeclared until PlayerService supports cold-start
+             playback resumption. Media3 starts the service in the foreground for a hardware play
+             event, and Android terminates it if playback cannot immediately promote the service. -->
 
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
