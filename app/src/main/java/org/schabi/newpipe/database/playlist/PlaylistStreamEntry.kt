@@ -49,6 +49,10 @@ data class PlaylistStreamEntry(
                 this,
                 ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)
             )
+            ExtractorImageCompat.setUploaderAvatarImages(
+                this,
+                ImageStrategy.dbUrlToImageList(streamEntity.uploaderAvatarUrl)
+            )
         }
     }
 
