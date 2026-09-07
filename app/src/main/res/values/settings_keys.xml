@@ -23,12 +23,20 @@
     <string name="per_channel_playback_profiles_key">per_channel_playback_profiles</string>
     <string name="popup_remember_size_pos_key">popup_remember_size_pos_key</string>
     <string name="native_pip_key">native_pip</string>
+    <string name="primary_floating_player_action_key">primary_floating_player_action</string>
+    <string name="primary_floating_player_action_pip_value">native_pip</string>
+    <string name="primary_floating_player_action_popup_value">popup_player</string>
     <string name="use_inexact_seek_key">use_inexact_seek_key</string>
     <string name="auto_queue_key">auto_queue_key</string>
     <string name="screen_brightness_key">screen_brightness_key</string>
     <string name="screen_brightness_timestamp_key">screen_brightness_timestamp_key</string>
     <string name="clear_queue_confirmation_key">clear_queue_confirmation_key</string>
     <string name="ignore_hardware_media_buttons_key">ignore_hardware_media_buttons_key</string>
+
+    <string-array name="primary_floating_player_action_values">
+        <item>@string/primary_floating_player_action_pip_value</item>
+        <item>@string/primary_floating_player_action_popup_value</item>
+    </string-array>
 
     <string name="popup_saved_width_key">popup_saved_width</string>
     <string name="popup_saved_x_key">popup_saved_x</string>
