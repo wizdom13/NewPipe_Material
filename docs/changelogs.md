@@ -4,6 +4,17 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.15.2 (`1015002`)
+
+### Fixes
+
+- Prevented a native Android Runtime crash while OkHttp repeatedly parsed YouTube API hostnames on
+  some Android 16 custom ROMs.
+- Restored the video surface and correct aspect ratio after the screen is turned off and back on,
+  preventing stretched or black video.
+
+[View the complete changes since v1.15.1](https://github.com/wizdom13/WizeStream/compare/v1.15.1...v1.15.2)
+
 ## WizeStream 1.15.1 (`1015001`)
 
 ### New features

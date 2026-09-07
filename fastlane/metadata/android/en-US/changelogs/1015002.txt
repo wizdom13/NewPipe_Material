@@ -1,0 +1,2 @@
+• Prevented a native crash while parsing repeated YouTube API URLs on affected Android ROMs.
+• Restored the video surface after screen wake to prevent stretched or black video.
