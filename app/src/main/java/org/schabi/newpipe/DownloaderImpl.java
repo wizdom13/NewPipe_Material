@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -44,12 +46,32 @@ public final class DownloaderImpl extends Downloader {
             "youtube_restricted_mode_key";
     public static final String YOUTUBE_RESTRICTED_MODE_COOKIE = "PREF=f2=8000000";
     public static final String YOUTUBE_DOMAIN = "youtube.com";
+    static final int PARSED_URL_CACHE_SIZE = 64;
+
+    private static final String YOUTUBE_INNERTUBE_URL =
+            "https://www.youtube.com/youtubei/v1/";
+    private static final String[] COMMON_YOUTUBE_API_URLS = {
+            YOUTUBE_INNERTUBE_URL + "browse?prettyPrint=false",
+            YOUTUBE_INNERTUBE_URL + "next?prettyPrint=false",
+            YOUTUBE_INNERTUBE_URL + "player?prettyPrint=false",
+            YOUTUBE_INNERTUBE_URL + "search?prettyPrint=false"
+    };
 
     private static DownloaderImpl instance;
     private final Map<String, String> mCookies;
+    private final Map<String, HttpUrl> parsedUrls = new LinkedHashMap<>(
+            PARSED_URL_CACHE_SIZE, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(final Map.Entry<String, HttpUrl> eldest) {
+            return size() > PARSED_URL_CACHE_SIZE;
+        }
+    };
     private final OkHttpClient client;
 
     private DownloaderImpl(final OkHttpClient.Builder builder) {
+        for (final String url : COMMON_YOUTUBE_API_URLS) {
+            parseUrl(url);
+        }
         this.client = builder
                 .addInterceptor(chain -> {
                     final okhttp3.Request originalRequest = chain.request();
@@ -200,7 +222,7 @@ public final class DownloaderImpl extends Downloader {
 
         final okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
                 .method(httpMethod, requestBody)
-                .url(url)
+                .url(parseUrl(url))
                 .addHeader("User-Agent", USER_AGENT);
 
         final String cookies = getCookies(url);
@@ -214,6 +236,25 @@ public final class DownloaderImpl extends Downloader {
                     requestBuilder.addHeader(headerName, headerValue));
         });
         return requestBuilder.build();
+    }
+
+    /**
+     * Reuses parsed URLs so repeated extractor requests do not repeatedly enter OkHttp's hostname
+     * canonicalizer. Apart from avoiding duplicate work, this works around an Android Runtime JIT
+     * crash observed on some Android 16 custom-ROM builds while that Kotlin method becomes hot.
+     */
+    @NonNull
+    HttpUrl parseUrl(@NonNull final String url) {
+        synchronized (parsedUrls) {
+            final HttpUrl cachedUrl = parsedUrls.get(url);
+            if (cachedUrl != null) {
+                return cachedUrl;
+            }
+
+            final HttpUrl parsedUrl = HttpUrl.get(url);
+            parsedUrls.put(url, parsedUrl);
+            return parsedUrl;
+        }
     }
 
     @Nullable
