@@ -52,6 +52,11 @@ internal fun portableSettingSpecs(context: Context): List<PortableSettingSpec> =
         R.string.minimize_on_exit_key
     ),
     portableSetting(context, PortableSettingId.NATIVE_PIP, R.string.native_pip_key),
+    portableSetting(
+        context,
+        PortableSettingId.PRIMARY_FLOATING_PLAYER_ACTION,
+        R.string.primary_floating_player_action_key
+    ),
     portableSetting(context, PortableSettingId.SEEK_DURATION, R.string.seek_duration_key),
     portableSetting(
         context,
