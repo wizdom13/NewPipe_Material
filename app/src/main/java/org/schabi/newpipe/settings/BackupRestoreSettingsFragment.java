@@ -52,6 +52,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private static final String ZIP_MIME_TYPE = "application/zip";
 
     private enum MigrationOption {
+        SUBSCRIPTIONS,
         HISTORY,
         PLAYLISTS,
         SETTINGS,
@@ -267,6 +268,12 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
         final List<String> optionLabels = new ArrayList<>();
         final List<MigrationOption> optionTypes = new ArrayList<>();
+        if (preview.getHasSubscriptions()) {
+            optionLabels.add(getString(
+                    R.string.migration_subscriptions_option,
+                    preview.getSubscriptions()));
+            optionTypes.add(MigrationOption.SUBSCRIPTIONS);
+        }
         if (preview.getHasHistory()) {
             optionLabels.add(getString(
                     R.string.migration_history_option,
@@ -310,6 +317,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         dialog.setOnCancelListener(ignored -> manager.discardStagedDb(stagedDatabase));
         dialog.setOnShowListener(ignored -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(button -> {
+                    boolean importSubscriptions = false;
                     boolean importHistory = false;
                     boolean importPlaylists = false;
                     boolean importSettings = false;
@@ -319,6 +327,9 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                             continue;
                         }
                         switch (optionTypes.get(i)) {
+                            case SUBSCRIPTIONS:
+                                importSubscriptions = true;
+                                break;
                             case HISTORY:
                                 importHistory = true;
                                 break;
@@ -335,7 +346,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                 break;
                         }
                     }
-                    if (!importHistory && !importPlaylists
+                    if (!importSubscriptions && !importHistory && !importPlaylists
                             && !importSettings && !importSponsorBlock) {
                         Toast.makeText(requireContext(), R.string.migration_nothing_selected,
                                 Toast.LENGTH_SHORT).show();
@@ -350,7 +361,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                     importHistory,
                                     importPlaylists,
                                     importSettings,
-                                    importSponsorBlock));
+                                    importSponsorBlock,
+                                    importSubscriptions));
                 }));
         dialog.show();
     }
@@ -377,6 +389,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                         migrationResult.getProgressItems(),
                                         migrationResult.getPlaylists(),
                                         migrationResult.getPlaylistItems(),
+                                        migrationResult.getSubscriptions(),
                                         migrationResult.getCompatibleSettings(),
                                         migrationResult.getSponsorBlockSettings(),
                                         migrationResult.getSkippedItems()))

@@ -101,6 +101,30 @@ public class SubscriptionManagerTest {
     }
 
     @Test
+    public void importedSubscriptionsDoNotReplaceExistingLocalSettings() {
+        final SubscriptionEntity existing = createSubscriptionEntity();
+        existing.setNotificationMode(1);
+        existing.setNotificationKeywords("lessons");
+        manager.insertSubscription(existing);
+
+        final SubscriptionEntity duplicate = createSubscriptionEntity();
+        duplicate.setName("Backup name");
+        duplicate.setNotificationMode(0);
+        final SubscriptionEntity imported = createSubscriptionEntity();
+        imported.setUrl("https://example.com/channel/imported");
+        imported.setName("Imported channel");
+
+        assertEquals(1, manager.insertImportedSubscriptions(List.of(duplicate, imported)));
+
+        final SubscriptionEntity preserved = database.subscriptionDAO()
+                .getSubscriptionDirect(SERVICE_ID, CHANNEL_URL);
+        assertEquals(CHANNEL_NAME, preserved.getName());
+        assertEquals(1, preserved.getNotificationMode());
+        assertEquals("lessons", preserved.getNotificationKeywords());
+        assertEquals(2, database.subscriptionDAO().getAllDirect().size());
+    }
+
+    @Test
     public void youtubeAndMusicMembershipsShareOneSubscription() {
         manager.insertSubscription(createSubscriptionEntity());
 

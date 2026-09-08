@@ -17,6 +17,8 @@ import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
+import org.schabi.newpipe.database.subscription.NotificationMode
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
@@ -71,6 +73,7 @@ class NewPipeDataMigrationManagerTest {
         assertEquals(1, preview.progressItems)
         assertEquals(1, preview.playlists)
         assertEquals(1, preview.playlistItems)
+        assertEquals(2, preview.subscriptions)
 
         val result = manager.importData(
             sourcePath,
@@ -92,6 +95,64 @@ class NewPipeDataMigrationManagerTest {
         assertTrue(playlists.any { it.name == "Lessons (Imported)" })
         val imported = playlists.single { it.name == "Lessons (Imported)" }
         assertEquals(1, target.playlistStreamDAO().getOrderedStreamsDirect(imported.uid).size)
+    }
+
+    @Test
+    fun compatibleSubscriptionsAreMergedWithoutReplacingExistingSettings() {
+        val target = NewPipeDatabase.getInstance(context)
+        target.subscriptionDAO().insert(
+            SubscriptionEntity(
+                serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+                url = "https://www.youtube.com/channel/existing",
+                name = "Local name",
+                notificationMode = NotificationMode.ENABLED,
+                notificationKeywords = "lessons"
+            )
+        )
+        val manager = NewPipeDataMigrationManager(context)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = false,
+                importPlaylists = false,
+                importSubscriptions = true
+            )
+        )
+
+        val subscriptions = target.subscriptionDAO().getAllDirect()
+        assertEquals(1, result.subscriptions)
+        assertEquals(1, result.skippedItems)
+        assertEquals(2, subscriptions.size)
+        val existing = subscriptions.single { it.url!!.endsWith("/existing") }
+        assertEquals("Local name", existing.name)
+        assertEquals(NotificationMode.ENABLED, existing.notificationMode)
+        assertEquals("lessons", existing.notificationKeywords)
+        val imported = subscriptions.single { it.url!!.endsWith("/imported") }
+        assertEquals("Imported channel", imported.name)
+        assertEquals("https://example.com/avatar.jpg", imported.avatarUrl)
+    }
+
+    @Test
+    fun subscriptionOnlyBackupIsAccepted() {
+        sourcePath.toFile().delete()
+        createSubscriptionOnlySourceDatabase(sourcePath)
+        val manager = NewPipeDataMigrationManager(context)
+
+        val preview = manager.inspect(sourcePath)
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = false,
+                importPlaylists = false,
+                importSubscriptions = true
+            )
+        )
+
+        assertEquals(1, preview.subscriptions)
+        assertFalse(preview.hasHistory)
+        assertFalse(preview.hasPlaylists)
+        assertEquals(1, result.subscriptions)
     }
 
     @Test
@@ -278,6 +339,12 @@ class NewPipeDataMigrationManagerTest {
                     "join_index INTEGER NOT NULL)"
             )
             source.execSQL(
+                "CREATE TABLE subscriptions (" +
+                    "uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, " +
+                    "url TEXT NOT NULL, name TEXT, avatar_url TEXT, " +
+                    "subscriber_count INTEGER, description TEXT)"
+            )
+            source.execSQL(
                 "INSERT INTO streams VALUES " +
                     "(1, 0, 'https://example.com/watch/1', 'Lesson one', " +
                     "'VIDEO_STREAM', 300, 'Teacher')"
@@ -286,6 +353,27 @@ class NewPipeDataMigrationManagerTest {
             source.execSQL("INSERT INTO stream_state VALUES (1, 90000)")
             source.execSQL("INSERT INTO playlists VALUES (10, 'Lessons')")
             source.execSQL("INSERT INTO playlist_stream_join VALUES (10, 1, 0)")
+            source.execSQL(
+                "INSERT INTO subscriptions VALUES " +
+                    "(1, 0, 'https://www.youtube.com/channel/existing', " +
+                    "'Backup name', NULL, NULL, NULL), " +
+                    "(2, 0, 'https://www.youtube.com/channel/imported', " +
+                    "'Imported channel', 'https://example.com/avatar.jpg', 42, 'Description')"
+            )
+        }
+    }
+
+    private fun createSubscriptionOnlySourceDatabase(path: Path) {
+        SQLiteDatabase.openOrCreateDatabase(path.toFile(), null).use { source ->
+            source.execSQL(
+                "CREATE TABLE subscriptions (" +
+                    "uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, " +
+                    "url TEXT NOT NULL, name TEXT)"
+            )
+            source.execSQL(
+                "INSERT INTO subscriptions VALUES " +
+                    "(1, 0, 'https://www.youtube.com/channel/imported', 'Imported channel')"
+            )
         }
     }
 

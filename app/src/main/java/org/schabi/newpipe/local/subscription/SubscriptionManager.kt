@@ -107,6 +107,30 @@ class SubscriptionManager(context: Context) {
         }
     }
 
+    /**
+     * Inserts imported subscriptions without replacing any existing local subscription data.
+     *
+     * @return the number of newly inserted subscriptions
+     */
+    fun insertImportedSubscriptions(entities: List<SubscriptionEntity>): Int {
+        val insertedEntities = database.runInTransaction<List<SubscriptionEntity>> {
+            entities.mapNotNull { entity ->
+                if (entity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                    entity.youtubeModeMask = currentYoutubeModeMask
+                }
+                val uid = subscriptionTable.insertIgnore(entity)
+                if (uid == -1L) {
+                    null
+                } else {
+                    entity.uid = uid
+                    entity
+                }
+            }
+        }
+        insertedEntities.forEach(::recordSubscriptionUpsert)
+        return insertedEntities.size
+    }
+
     fun updateChannelInfo(info: ChannelInfo): Completable = subscriptionTable.getSubscription(info.serviceId, info.url)
         .flatMapCompletable {
             Completable.fromRunnable {

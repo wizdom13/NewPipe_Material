@@ -12,6 +12,8 @@ import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamType
 
 class NewPipeDataMigrationManager(private val context: Context) {
@@ -25,6 +27,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val progressItems: Int,
         val playlists: Int,
         val playlistItems: Int,
+        val subscriptions: Int,
         val compatibleSettings: Int,
         val sponsorBlockSettings: Int,
         val sourceApp: SourceApp
@@ -33,12 +36,14 @@ class NewPipeDataMigrationManager(private val context: Context) {
             get() = historyItems > 0 || progressItems > 0
         val hasPlaylists: Boolean
             get() = playlists > 0
+        val hasSubscriptions: Boolean
+            get() = subscriptions > 0
         val hasCompatibleSettings: Boolean
             get() = compatibleSettings > 0
         val hasSponsorBlockSettings: Boolean
             get() = sponsorBlockSettings > 0
         val hasImportableData: Boolean
-            get() = hasHistory || hasPlaylists ||
+            get() = hasHistory || hasPlaylists || hasSubscriptions ||
                 hasCompatibleSettings || hasSponsorBlockSettings
     }
 
@@ -46,7 +51,8 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val importHistory: Boolean,
         val importPlaylists: Boolean,
         val importSettings: Boolean = false,
-        val importSponsorBlock: Boolean = false
+        val importSponsorBlock: Boolean = false,
+        val importSubscriptions: Boolean = false
     )
 
     data class Result(
@@ -54,6 +60,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val progressItems: Int,
         val playlists: Int,
         val playlistItems: Int,
+        val subscriptions: Int,
         val compatibleSettings: Int,
         val sponsorBlockSettings: Int,
         val skippedItems: Int
@@ -78,6 +85,11 @@ class NewPipeDataMigrationManager(private val context: Context) {
             progressItems = if (schema.hasProgress) source.countRows(STATE_TABLE) else 0,
             playlists = if (schema.hasPlaylists) source.countRows(PLAYLIST_TABLE) else 0,
             playlistItems = if (schema.hasPlaylists) source.countRows(PLAYLIST_JOIN_TABLE) else 0,
+            subscriptions = if (schema.hasSubscriptions) {
+                source.countRows(SUBSCRIPTION_TABLE)
+            } else {
+                0
+            },
             compatibleSettings = compatibleSettings.size,
             sponsorBlockSettings = sponsorBlockSettings.size,
             sourceApp = if (schema.isPipePipe) SourceApp.PIPEPIPE else SourceApp.NEWPIPE
@@ -90,7 +102,11 @@ class NewPipeDataMigrationManager(private val context: Context) {
         sourcePreferences: Map<String, *> = emptyMap<String, Any>()
     ): Result = openSource(databasePath).use { source ->
         val schema = inspectSchema(source)
-        val streams = readStreams(source)
+        val streams = if (selection.importHistory || selection.importPlaylists) {
+            readStreams(source)
+        } else {
+            emptyMap()
+        }
         val target = NewPipeDatabase.getInstance(context)
         val settingsMigration = CompatibleSettingsMigration(context)
         val compatibleSettings = settingsMigration.prepare(sourcePreferences)
@@ -101,7 +117,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
         }
         var settingsRollback: CompatibleSettingsMigration.Rollback? = null
         var sponsorBlockRollback: CompatibleSettingsMigration.Rollback? = null
-        var result = Result(0, 0, 0, 0, 0, 0, 0)
+        var result = Result(0, 0, 0, 0, 0, 0, 0, 0)
 
         try {
             if (selection.importSettings && compatibleSettings.size > 0) {
@@ -126,7 +142,38 @@ class NewPipeDataMigrationManager(private val context: Context) {
                 var progressItems = 0
                 var playlists = 0
                 var playlistItems = 0
+                var subscriptions = 0
                 var skippedItems = 0
+
+                if (selection.importSubscriptions && schema.hasSubscriptions) {
+                    val supportedServiceIds = ServiceList.all()
+                        .mapTo(mutableSetOf()) { it.serviceId }
+                    source.rawQuery("SELECT * FROM $SUBSCRIPTION_TABLE", null).use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val serviceId = cursor.long("service_id")?.toInt()
+                            val url = cursor.string("url")?.trim().orEmpty()
+                            if (serviceId == null || serviceId !in supportedServiceIds ||
+                                url.isEmpty()
+                            ) {
+                                skippedItems++
+                                continue
+                            }
+                            val entity = SubscriptionEntity(
+                                serviceId = serviceId,
+                                url = url,
+                                name = cursor.string("name")?.trim().orEmpty().ifEmpty { url },
+                                avatarUrl = cursor.string("avatar_url"),
+                                subscriberCount = cursor.long("subscriber_count"),
+                                description = cursor.string("description")
+                            )
+                            if (target.subscriptionDAO().insertIgnore(entity) != -1L) {
+                                subscriptions++
+                            } else {
+                                skippedItems++
+                            }
+                        }
+                    }
+                }
 
                 if (selection.importHistory && schema.hasHistory) {
                     source.rawQuery(
@@ -255,6 +302,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
                     progressItems,
                     playlists,
                     playlistItems,
+                    subscriptions,
                     if (selection.importSettings) compatibleSettings.size else 0,
                     if (selection.importSponsorBlock) sponsorBlockSettings.size else 0,
                     skippedItems
@@ -288,27 +336,30 @@ class NewPipeDataMigrationManager(private val context: Context) {
 
     private fun inspectSchema(source: SQLiteDatabase): SourceSchema {
         val streamColumns = source.columnsOf(STREAM_TABLE)
-        if (!streamColumns.containsAll(REQUIRED_STREAM_COLUMNS)) {
-            throw UnsupportedSourceException(
-                "The source database does not contain a compatible NewPipe streams table"
-            )
-        }
+        val hasStreams = streamColumns.containsAll(REQUIRED_STREAM_COLUMNS)
         val historyColumns = source.columnsOf(HISTORY_TABLE)
         val stateColumns = source.columnsOf(STATE_TABLE)
         val playlistColumns = source.columnsOf(PLAYLIST_TABLE)
         val joinColumns = source.columnsOf(PLAYLIST_JOIN_TABLE)
+        val subscriptionColumns = source.columnsOf(SUBSCRIPTION_TABLE)
         val schema = SourceSchema(
-            hasHistory = historyColumns.containsAll(REQUIRED_HISTORY_COLUMNS),
-            hasProgress = stateColumns.containsAll(REQUIRED_STATE_COLUMNS),
-            hasPlaylists = playlistColumns.containsAll(REQUIRED_PLAYLIST_COLUMNS) &&
+            hasHistory = hasStreams && historyColumns.containsAll(REQUIRED_HISTORY_COLUMNS),
+            hasProgress = hasStreams && stateColumns.containsAll(REQUIRED_STATE_COLUMNS),
+            hasPlaylists = hasStreams &&
+                playlistColumns.containsAll(REQUIRED_PLAYLIST_COLUMNS) &&
                 joinColumns.containsAll(REQUIRED_PLAYLIST_JOIN_COLUMNS),
+            hasSubscriptions = subscriptionColumns.containsAll(
+                REQUIRED_SUBSCRIPTION_COLUMNS
+            ),
             playlistColumns = playlistColumns,
             isPipePipe = source.tableExists(PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE) ||
                 source.userVersion() >= PIPEPIPE_DATABASE_VERSION_FLOOR
         )
-        if (!schema.hasHistory && !schema.hasProgress && !schema.hasPlaylists) {
+        if (!schema.hasHistory && !schema.hasProgress && !schema.hasPlaylists &&
+            !schema.hasSubscriptions
+        ) {
             throw UnsupportedSourceException(
-                "The source database does not contain compatible history or playlist data"
+                "The source database does not contain compatible migration data"
             )
         }
         return schema
@@ -420,6 +471,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val hasHistory: Boolean,
         val hasProgress: Boolean,
         val hasPlaylists: Boolean,
+        val hasSubscriptions: Boolean,
         val playlistColumns: Set<String>,
         val isPipePipe: Boolean
     ) {
@@ -433,6 +485,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
         private const val STATE_TABLE = "stream_state"
         private const val PLAYLIST_TABLE = "playlists"
         private const val PLAYLIST_JOIN_TABLE = "playlist_stream_join"
+        private const val SUBSCRIPTION_TABLE = "subscriptions"
         private const val PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE = "sponsorblock_whitelist"
         private const val PIPEPIPE_DATABASE_VERSION_FLOOR = 900
 
@@ -456,6 +509,11 @@ class NewPipeDataMigrationManager(private val context: Context) {
             "playlist_id",
             "stream_id",
             "join_index"
+        )
+        private val REQUIRED_SUBSCRIPTION_COLUMNS = setOf(
+            "service_id",
+            "url",
+            "name"
         )
     }
 }
