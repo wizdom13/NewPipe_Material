@@ -1,0 +1,4 @@
+• Added controls to choose which remote lists use content blocking.
+• Fixed landscape fullscreen and custom notification actions on Android 13+.
+• Prevented unwanted background player-service restarts.
+• Improved BiliBili risk-control and invalid-response handling.
