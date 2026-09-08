@@ -271,6 +271,7 @@ public final class VideoDetailFragment
     private int viewPagerBaseBottomMargin;
     private boolean detailLayoutRecreationPending;
     private boolean detailLayoutRecreationRequested;
+    private int pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -475,8 +476,12 @@ public final class VideoDetailFragment
 
     private void syncFullscreenWithOrientation(
             @NonNull final Optional<MainPlayerUi> playerUi) {
-        syncFullscreenWithOrientation(
-                playerUi, getResources().getConfiguration().orientation);
+        final int currentOrientation = getResources().getConfiguration().orientation;
+        if (pendingFullscreenOrientation != Configuration.ORIENTATION_UNDEFINED
+                && pendingFullscreenOrientation != currentOrientation) {
+            return;
+        }
+        syncFullscreenWithOrientation(playerUi, currentOrientation);
     }
 
     private void syncFullscreenWithOrientation(
@@ -488,12 +493,33 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            playerUi.ifPresent(ui -> ui.setFullscreen(true));
-        } else if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            playerUi.filter(ui -> ui.isFullscreen() && !ui.isVerticalVideo())
-                    .ifPresent(ui -> ui.setFullscreen(false));
+        final MainPlayerUi ui = playerUi.orElse(null);
+        if (ui == null) {
+            return;
         }
+
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            ui.setFullscreen(true);
+        } else if (orientation == Configuration.ORIENTATION_PORTRAIT
+                && ui.isFullscreen() && !ui.isVerticalVideo()) {
+            ui.setFullscreen(false);
+        }
+
+        if (isFullscreenStateApplied(orientation, ui.isFullscreen(), ui.isVerticalVideo())) {
+            pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
+        }
+    }
+
+    static boolean isFullscreenStateApplied(final int orientation,
+                                            final boolean fullscreen,
+                                            final boolean verticalVideo) {
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return fullscreen;
+        }
+        if (orientation == Configuration.ORIENTATION_PORTRAIT && !verticalVideo) {
+            return !fullscreen;
+        }
+        return true;
     }
 
     static boolean shouldKeepPhonePlayerLayoutForLandscape(
@@ -1811,6 +1837,11 @@ public final class VideoDetailFragment
                     }
                     playerUi.setupVideoSurfaceIfNeeded();
                     updatePinnedPlayerLayout();
+                    // A configuration change can temporarily detach the player UI. Retry the
+                    // requested fullscreen transition only after the rebuilt layout and surface
+                    // are attached, so the request is not lost and the old surface dimensions
+                    // are not cached.
+                    syncFullscreenWithOrientation(Optional.of(playerUi));
                 }
             });
         });
@@ -2758,6 +2789,9 @@ public final class VideoDetailFragment
                 ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 
+        pendingFullscreenOrientation = isLandscape
+                ? Configuration.ORIENTATION_PORTRAIT
+                : Configuration.ORIENTATION_LANDSCAPE;
         activity.setRequestedOrientation(newOrientation);
     }
 

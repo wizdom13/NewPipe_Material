@@ -17,14 +17,23 @@ public class VideoDetailOrientationHandlingTest {
             ? Path.of("src/main") : Path.of("app/src/main");
 
     @Test
-    public void configurationOwnsFullscreenWithoutDeferredOrientationState()
-            throws Exception {
-        final String fragment = readFragment();
-        assertTrue(fragment.contains("final int orientation = newConfig.orientation;"));
-        assertTrue(fragment.contains("ui.setFullscreen(true)"));
-        assertTrue(fragment.contains("ui.setFullscreen(false)"));
-        assertFalse(fragment.contains("pendingFullscreenOrientation"));
-        assertFalse(fragment.contains("fullscreenStateForOrientation("));
+    public void fullscreenTransitionCompletesOnlyAfterTargetStateIsApplied() {
+        assertFalse(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_LANDSCAPE, false, false));
+        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_LANDSCAPE, true, false));
+        assertFalse(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_PORTRAIT, true, false));
+        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_PORTRAIT, false, false));
+    }
+
+    @Test
+    public void portraitVerticalVideoDoesNotWaitForAnOrientationDrivenExit() {
+        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_PORTRAIT, true, true));
+        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+                Configuration.ORIENTATION_UNDEFINED, false, false));
     }
 
     @Test
