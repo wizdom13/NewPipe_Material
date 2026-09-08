@@ -15,6 +15,7 @@ class FeedFilterPersistenceTest {
     fun storedFilterRestoresAndUnknownValuesFallBackSafely() {
         assertEquals(StreamListFilter.LIVE, FeedFragment.restoreStreamFilter("LIVE"))
         assertEquals(StreamListFilter.SHORTS, FeedFragment.restoreStreamFilter("SHORTS"))
+        assertEquals(StreamListFilter.UPCOMING, FeedFragment.restoreStreamFilter("UPCOMING"))
         assertEquals(StreamListFilter.NONE, FeedFragment.restoreStreamFilter("REMOVED_FILTER"))
         assertEquals(StreamListFilter.NONE, FeedFragment.restoreStreamFilter(null))
     }

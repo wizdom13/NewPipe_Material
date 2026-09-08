@@ -1,12 +1,14 @@
 package org.schabi.newpipe.util
 
 import java.time.OffsetDateTime
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.database.stream.StreamStatisticsEntry
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
+import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 
@@ -61,6 +63,18 @@ class StreamListFilterTest {
                 null
             )
         )
+    }
+
+    @Test
+    fun `upcoming is separate from live videos and shorts`() {
+        val now = OffsetDateTime.parse("2026-09-08T12:00:00Z")
+        val upcoming = stream(type = StreamType.LIVE_STREAM).apply {
+            uploadDate = DateWrapper(OffsetDateTime.parse("2100-01-01T00:00:00Z"))
+        }
+
+        assertTrue(StreamListFilter.matches(StreamListFilter.UPCOMING, upcoming, null))
+        assertFalse(StreamListFilter.matches(StreamListFilter.LIVE, upcoming, null))
+        assertEquals(StreamListFilter.UPCOMING, StreamListFilter.categoryOf(upcoming, now))
     }
 
     @Test
@@ -148,6 +162,12 @@ class StreamListFilterTest {
         )
         assertTrue(
             StreamListFilter.matches(
+                StreamListFilter.UPCOMING,
+                historyEntry(uploadDate = OffsetDateTime.parse("2100-01-01T00:00:00Z"))
+            )
+        )
+        assertTrue(
+            StreamListFilter.matches(
                 StreamListFilter.PARTIALLY_WATCHED,
                 historyEntry(duration = 600, progressMillis = 120_000)
             )
@@ -172,7 +192,8 @@ class StreamListFilterTest {
         url: String = "https://example.com/watch/video",
         duration: Long = 600,
         type: StreamType = StreamType.VIDEO_STREAM,
-        progressMillis: Long = 0
+        progressMillis: Long = 0,
+        uploadDate: OffsetDateTime? = null
     ) = StreamStatisticsEntry(
         streamEntity = StreamEntity(
             serviceId = 0,
@@ -181,7 +202,7 @@ class StreamListFilterTest {
             streamType = type,
             duration = duration,
             uploader = "Uploader"
-        ),
+        ).apply { this.uploadDate = uploadDate },
         progressMillis = progressMillis,
         streamId = 1,
         latestAccessDate = OffsetDateTime.parse("2026-08-21T12:00:00Z"),

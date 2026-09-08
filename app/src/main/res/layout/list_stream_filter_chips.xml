@@ -50,6 +50,14 @@
             android:text="@string/channel_tab_shorts" />
 
         <com.google.android.material.chip.Chip
+            android:id="@+id/filter_upcoming"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checkable="true"
+            android:text="@string/feed_show_upcoming" />
+
+        <com.google.android.material.chip.Chip
             android:id="@+id/filter_partially_watched"
             style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
