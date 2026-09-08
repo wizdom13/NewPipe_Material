@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.MediaFormat;
@@ -51,6 +52,17 @@ public class PlayerHttpErrorRecoveryTest {
         assertFalse(PlayerHttpErrorRecovery.hasUnknownHostCause(
                 new RuntimeException("source", new IOException("network"))));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
+                new RuntimeException("source", new IOException("network"))));
+    }
+
+    @Test
+    public void treatsNestedStuckHlsPlaylistAsRecoverable() {
+        final Throwable error = new RuntimeException("source", new IOException("network",
+                new HlsPlaylistTracker.PlaylistStuckException(null)));
+
+        assertTrue(PlayerHttpErrorRecovery.hasPlaylistStuckCause(error));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
+        assertFalse(PlayerHttpErrorRecovery.hasPlaylistStuckCause(
                 new RuntimeException("source", new IOException("network"))));
     }
 
