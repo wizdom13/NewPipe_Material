@@ -46,6 +46,7 @@ import org.schabi.newpipe.ktx.BundleKt;
 import org.schabi.newpipe.player.mediabrowser.MediaBrowserImpl;
 import org.schabi.newpipe.player.mediabrowser.MediaBrowserPlaybackPreparer;
 import org.schabi.newpipe.player.mediasession.MediaSessionActionProvider;
+import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationUtil;
 import org.schabi.newpipe.util.ThemeHelper;
@@ -377,6 +378,15 @@ public final class PlayerService extends MediaLibraryService {
                         session, controller)
                         .setAvailableSessionCommands(commands.build())
                         .build();
+            }
+
+            @Override
+            public void onPostConnect(@NonNull final MediaSession session,
+                                      @NonNull final MediaSession.ControllerInfo controller) {
+                if (player != null) {
+                    player.UIs().get(MediaSessionPlayerUi.class).ifPresent(
+                            ui -> ui.onMediaSessionControllerConnected(controller));
+                }
             }
 
             @Override

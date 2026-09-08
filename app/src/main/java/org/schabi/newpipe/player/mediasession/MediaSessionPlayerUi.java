@@ -119,6 +119,27 @@ public class MediaSessionPlayerUi extends PlayerUi
         return Optional.of(mediaSession);
     }
 
+    /**
+     * Republishes configured actions after Android's media-notification controller connects.
+     * The controller commonly connects after player initialization, especially on newer OEM
+     * System UI implementations, so the initial action update cannot reliably target it.
+     *
+     * @param controller the controller whose connection has completed
+     */
+    public void onMediaSessionControllerConnected(
+            @NonNull final MediaSession.ControllerInfo controller) {
+        if (shouldRefreshNotificationActions(
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+                mediaSession.isMediaNotificationController(controller))) {
+            updateMediaSessionActions();
+        }
+    }
+
+    static boolean shouldRefreshNotificationActions(final boolean systemUiActionsSupported,
+                                                    final boolean notificationController) {
+        return systemUiActionsSupported && notificationController;
+    }
+
 
     private ForwardingPlayer getForwardingPlayer() {
         // ForwardingPlayer means that all media session actions called on this player are
