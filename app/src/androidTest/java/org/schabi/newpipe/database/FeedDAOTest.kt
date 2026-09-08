@@ -228,6 +228,32 @@ class FeedDAOTest {
         assertEqual(soundCloudStreams, listOf(soundCloudStream))
     }
 
+    @Test
+    fun approximateUploadDateCanBeRepositionedWithoutReplacingAnExactDate() {
+        val approximate = stream1.copy(
+            uid = 10,
+            url = "https://youtube.com/shorts/approximate",
+            uploadDate = OffsetDateTime.parse("2026-09-08T12:00:00Z"),
+            isUploadDateApproximation = true
+        )
+        val exact = stream2.copy(
+            uid = 11,
+            url = "https://youtube.com/watch?v=exact",
+            uploadDate = OffsetDateTime.parse("2026-09-07T12:00:00Z"),
+            isUploadDateApproximation = false
+        )
+        streamDAO.insertAll(listOf(approximate, exact))
+        val correctedDate = OffsetDateTime.parse("2026-09-01T12:00:00Z")
+
+        assertEquals(
+            1,
+            streamDAO.updateApproximateUploadDate(serviceId, approximate.url, correctedDate)
+        )
+        assertEquals(0, streamDAO.updateApproximateUploadDate(serviceId, exact.url, correctedDate))
+        assertEquals(correctedDate, streamDAO.getStreamDirect(approximate.uid)!!.uploadDate)
+        assertEquals(exact.uploadDate, streamDAO.getStreamDirect(exact.uid)!!.uploadDate)
+    }
+
     private fun assertEqual(streams: List<StreamWithState>?, allowedStreams: List<StreamEntity>) {
         assertNotNull(streams)
         assertEquals(

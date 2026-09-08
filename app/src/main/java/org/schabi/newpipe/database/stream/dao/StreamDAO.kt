@@ -40,6 +40,21 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
 
     @Query(
         """
+        UPDATE streams
+        SET upload_date = :uploadDate
+        WHERE service_id = :serviceId
+        AND url = :url
+        AND is_upload_date_approximation = 1
+        """
+    )
+    abstract fun updateApproximateUploadDate(
+        serviceId: Int,
+        url: String,
+        uploadDate: OffsetDateTime
+    ): Int
+
+    @Query(
+        """
         SELECT uploader_avatar_url FROM streams
         WHERE service_id = :serviceId
         AND uploader_url = :uploaderUrl

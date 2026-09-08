@@ -316,7 +316,7 @@ class FeedLoadManager(private val context: Context) {
                     .filterIsInstance<StreamInfoItem>()
             }
 
-            FeedItemDateResolver.applyFirstSeenDates(
+            val repositionExistingShorts = FeedItemDateResolver.applyApproximateDates(
                 streams!!,
                 OffsetDateTime.now(ZoneOffset.UTC)
             )
@@ -326,7 +326,8 @@ class FeedLoadManager(private val context: Context) {
                     subscriptionEntity,
                     originalInfo!!,
                     streams!!,
-                    errors
+                    errors,
+                    repositionExistingShorts
                 )
             )
         } catch (e: Throwable) {
@@ -391,7 +392,8 @@ class FeedLoadManager(private val context: Context) {
                                 info.uid,
                                 info.streams,
                                 updateModeMask,
-                                uploaderAvatarUrl = info.avatarUrl
+                                uploaderAvatarUrl = info.avatarUrl,
+                                repositionApproximateShorts = info.repositionExistingShorts
                             )
                             subscriptionManager.updateFromInfo(info)
 
