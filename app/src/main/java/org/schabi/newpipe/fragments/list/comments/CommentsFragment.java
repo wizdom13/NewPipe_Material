@@ -19,6 +19,7 @@ import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.ktx.ViewUtils;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 
 import io.reactivex.rxjava3.core.Single;
@@ -38,6 +39,12 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
 
     public CommentsFragment() {
         super(UserAction.REQUESTED_COMMENTS);
+    }
+
+    @NonNull
+    @Override
+    protected ContentBlockingHelper.Target getContentBlockingTarget() {
+        return ContentBlockingHelper.Target.COMMENTS;
     }
 
     @Override

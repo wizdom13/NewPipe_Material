@@ -93,6 +93,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private final InfoItemBuilder infoItemBuilder;
     private final List<InfoItem> infoItemList;
     private final HistoryRecordManager recordManager;
+    private final ContentBlockingHelper.Target contentBlockingTarget;
 
     private boolean useMiniVariant = false;
     private boolean useWideRelatedVariant = false;
@@ -102,11 +103,13 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     private Supplier<View> headerSupplier = null;
 
-    public InfoListAdapter(final Context context) {
+    public InfoListAdapter(final Context context,
+                           @NonNull final ContentBlockingHelper.Target contentBlockingTarget) {
         layoutInflater = LayoutInflater.from(context);
         recordManager = new HistoryRecordManager(context);
         infoItemBuilder = new InfoItemBuilder(context);
         infoItemList = new ArrayList<>();
+        this.contentBlockingTarget = contentBlockingTarget;
     }
 
     public void setOnStreamSelectedListener(final OnClickGesture<StreamInfoItem> listener) {
@@ -151,7 +154,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         final boolean hideMembersOnly = MembersOnlyContentHelper.shouldHide(
                 infoItemBuilder.getContext());
         final ContentBlockingHelper.Rules blockingRules = ContentBlockingHelper.getRules(
-                infoItemBuilder.getContext());
+                infoItemBuilder.getContext(), contentBlockingTarget);
         for (final InfoItem item : data) {
             if (!hideMembersOnly || !(item instanceof StreamInfoItem)
                     || !((StreamInfoItem) item).requiresMembership()) {

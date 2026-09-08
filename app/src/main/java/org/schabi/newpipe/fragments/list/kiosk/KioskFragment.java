@@ -31,6 +31,7 @@ import org.schabi.newpipe.extractor.linkhandler.ListLinkHandlerFactory;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.KioskTranslator;
 import org.schabi.newpipe.util.Localization;
@@ -67,6 +68,12 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
 
     public KioskFragment() {
         super(UserAction.REQUESTED_KIOSK);
+    }
+
+    @NonNull
+    @Override
+    protected ContentBlockingHelper.Target getContentBlockingTarget() {
+        return ContentBlockingHelper.Target.KIOSKS;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
