@@ -12,6 +12,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.withSettings
 import org.mockito.junit.MockitoJUnitRunner
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.subscription.SubscriptionItem as ExtractorSubscriptionItem
 import org.schabi.newpipe.streams.io.StoredFileHelper
@@ -77,6 +78,43 @@ class SubscriptionImportWorkerTest {
 
         assertEquals(84, subscriptions.size)
         assertEquals("Channel 83", subscriptions.last().name)
+    }
+
+    @Test
+    fun `large imports are converted directly to subscription entities`() {
+        val subscriptions = List(350) { index ->
+            SubscriptionItem(
+                ServiceList.YouTube.serviceId,
+                "https://www.youtube.com/channel/test$index",
+                "Channel $index"
+            )
+        }
+
+        val entities = SubscriptionImportWorker.prepareSubscriptionEntities(
+            subscriptions,
+            setOf(ServiceList.YouTube.serviceId)
+        )
+
+        assertEquals(350, entities.size)
+        assertEquals("Channel 349", entities.last().name)
+        assertEquals(SubscriptionEntity.YOUTUBE_SERVICE_ID, entities.last().serviceId)
+    }
+
+    @Test
+    fun `unsupported services and empty urls are skipped without network resolution`() {
+        val validUrl = "https://www.youtube.com/channel/valid"
+        val entities = SubscriptionImportWorker.prepareSubscriptionEntities(
+            listOf(
+                SubscriptionItem(ServiceList.YouTube.serviceId, validUrl, ""),
+                SubscriptionItem(Int.MAX_VALUE, "https://example.com/channel", "Unknown"),
+                SubscriptionItem(ServiceList.YouTube.serviceId, "   ", "Missing")
+            ),
+            setOf(ServiceList.YouTube.serviceId)
+        )
+
+        assertEquals(1, entities.size)
+        assertEquals(validUrl, entities.single().url)
+        assertEquals(validUrl, entities.single().name)
     }
 
     @Test

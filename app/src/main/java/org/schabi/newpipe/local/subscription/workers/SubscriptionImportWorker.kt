@@ -16,19 +16,15 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.rx3.await
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import org.schabi.newpipe.R
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.streams.io.SharpInputStream
 import org.schabi.newpipe.streams.io.StoredFileHelper
-import org.schabi.newpipe.util.ExtractorHelper
 
 class SubscriptionImportWorker(
     appContext: Context,
@@ -53,105 +49,35 @@ class SubscriptionImportWorker(
                 return Result.failure()
             }
 
-        val mutex = Mutex()
-        var processedCount = 0
         val totalCount = subscriptions.size
-        val loadingTitle =
-            applicationContext.resources.getQuantityString(
-                R.plurals.load_subscriptions,
-                totalCount,
-                totalCount
-            )
-
-        val resolvedSubscriptions =
-            try {
-                withContext(Dispatchers.IO.limitedParallelism(PARALLEL_EXTRACTIONS)) {
-                    subscriptions
-                        .map { subscription ->
-                            async {
-                                val resolved =
-                                    try {
-                                        val channelInfo =
-                                            ExtractorHelper
-                                                .getChannelInfo(subscription.serviceId, subscription.url, true)
-                                                .await()
-                                        val channelTab =
-                                            channelInfo.tabs.firstOrNull()?.let { tab ->
-                                                try {
-                                                    ExtractorHelper
-                                                        .getChannelTab(subscription.serviceId, tab, true)
-                                                        .await()
-                                                } catch (e: CancellationException) {
-                                                    throw e
-                                                } catch (e: Exception) {
-                                                    Log.w(
-                                                        TAG,
-                                                        "Could not load the first tab for ${subscription.url}; " +
-                                                            "importing the channel without initial feed items",
-                                                        e
-                                                    )
-                                                    null
-                                                }
-                                            }
-                                        channelInfo to channelTab
-                                    } catch (e: CancellationException) {
-                                        throw e
-                                    } catch (e: Exception) {
-                                        Log.e(
-                                            TAG,
-                                            "Skipping subscription that could not be loaded: " +
-                                                subscription.url,
-                                            e
-                                        )
-                                        null
-                                    }
-
-                                val currentProgress = mutex.withLock { ++processedCount }
-                                setForeground(
-                                    createForegroundInfo(
-                                        loadingTitle,
-                                        subscription.name,
-                                        currentProgress,
-                                        totalCount
-                                    )
-                                )
-                                resolved
-                            }
-                        }.awaitAll()
-                        .filterNotNull()
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "Error while processing subscription data", e)
-                withContext(Dispatchers.Main) {
-                    Toast
-                        .makeText(applicationContext, R.string.subscriptions_import_unsuccessful, Toast.LENGTH_SHORT)
-                        .show()
-                }
-                return Result.failure()
-            }
-
-        val importedCount = resolvedSubscriptions.size
-        val skippedCount = totalCount - importedCount
         val importingTitle =
             applicationContext.resources.getQuantityString(
                 R.plurals.import_subscriptions,
-                importedCount,
-                importedCount
+                totalCount,
+                totalCount
             )
-        setForeground(createForegroundInfo(importingTitle, null, 0, importedCount))
+        val supportedServiceIds = ServiceList.all().mapTo(mutableSetOf()) { it.serviceId }
+        val entities = prepareSubscriptionEntities(subscriptions, supportedServiceIds)
+        setForeground(
+            createForegroundInfo(
+                importingTitle,
+                null,
+                totalCount - entities.size,
+                totalCount
+            )
+        )
 
         val subscriptionManager = SubscriptionManager(applicationContext)
         var insertedCount = 0
+        var processedCount = totalCount - entities.size
         try {
-            for (chunk in resolvedSubscriptions.chunked(BUFFER_COUNT_BEFORE_INSERT)) {
+            for (chunk in entities.chunked(BUFFER_COUNT_BEFORE_INSERT)) {
                 withContext(Dispatchers.IO) {
-                    subscriptionManager.upsertAll(chunk)
+                    insertedCount += subscriptionManager.insertImportedSubscriptions(chunk)
                 }
-                insertedCount += chunk.size
+                processedCount += chunk.size
                 setForeground(
-                    createForegroundInfo(importingTitle, null, insertedCount, importedCount)
+                    createForegroundInfo(importingTitle, null, processedCount, totalCount)
                 )
             }
         } catch (e: CancellationException) {
@@ -166,13 +92,14 @@ class SubscriptionImportWorker(
             return Result.failure()
         }
 
+        val skippedCount = totalCount - insertedCount
         withContext(Dispatchers.Main) {
             Toast
                 .makeText(
                     applicationContext,
                     applicationContext.getString(
                         R.string.subscriptions_import_complete_summary,
-                        importedCount,
+                        insertedCount,
                         skippedCount
                     ),
                     Toast.LENGTH_LONG
@@ -181,7 +108,7 @@ class SubscriptionImportWorker(
 
         return Result.success(
             workDataOf(
-                IMPORTED_COUNT_KEY to importedCount,
+                IMPORTED_COUNT_KEY to insertedCount,
                 SKIPPED_COUNT_KEY to skippedCount
             )
         )
@@ -256,7 +183,6 @@ class SubscriptionImportWorker(
         private const val NOTIFICATION_ID = 4568
         private const val NOTIFICATION_CHANNEL_ID = "newpipe"
         private const val DEFAULT_MIME = "application/octet-stream"
-        private const val PARALLEL_EXTRACTIONS = 8
         private const val BUFFER_COUNT_BEFORE_INSERT = 50
 
         const val WORK_NAME = "SubscriptionImportWorker"
@@ -274,6 +200,22 @@ class SubscriptionImportWorker(
             return when {
                 pointIndex == -1 || pointIndex >= fileName.length - 1 -> DEFAULT_MIME
                 else -> fileName.substring(pointIndex + 1)
+            }
+        }
+
+        internal fun prepareSubscriptionEntities(
+            subscriptions: List<SubscriptionItem>,
+            supportedServiceIds: Set<Int>
+        ): List<SubscriptionEntity> = subscriptions.mapNotNull { subscription ->
+            val url = subscription.url.trim()
+            if (subscription.serviceId !in supportedServiceIds || url.isEmpty()) {
+                null
+            } else {
+                SubscriptionEntity(
+                    serviceId = subscription.serviceId,
+                    url = url,
+                    name = subscription.name.trim().ifEmpty { url }
+                )
             }
         }
     }
