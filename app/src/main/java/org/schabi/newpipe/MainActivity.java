@@ -279,10 +279,12 @@ public class MainActivity extends AppCompatActivity {
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, false).apply();
         Log.d(TAG, "App moved to foreground");
         nativePipController.onMainActivityStarted();
+        openMiniPlayerUponPlayerStarted();
     }
 
     @Override
     protected void onStop() {
+        unregisterPlayerStartedReceiver();
         super.onStop();
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, true).apply();
         Log.d(TAG, "App moved to background");
@@ -647,9 +649,7 @@ public class MainActivity extends AppCompatActivity {
         if (!isChangingConfigurations()) {
             StateSaver.clearStateFiles();
         }
-        if (broadcastReceiver != null) {
-            unregisterReceiver(broadcastReceiver);
-        }
+        unregisterPlayerStartedReceiver();
     }
 
     @Override
@@ -1290,6 +1290,9 @@ public class MainActivity extends AppCompatActivity {
             // if the player is already open, no need for a broadcast receiver
             openMiniPlayerIfMissing();
         } else {
+            if (broadcastReceiver != null) {
+                return;
+            }
             // listen for player start intent being sent around
             broadcastReceiver = new BroadcastReceiver() {
                 @Override
@@ -1300,8 +1303,7 @@ public class MainActivity extends AppCompatActivity {
                         openMiniPlayerIfMissing();
                         // At this point the player is added 100%, we can unregister. Other actions
                         // are useless since the fragment will not be removed after that.
-                        unregisterReceiver(broadcastReceiver);
-                        broadcastReceiver = null;
+                        unregisterPlayerStartedReceiver();
                     }
                 }
             };
@@ -1313,6 +1315,13 @@ public class MainActivity extends AppCompatActivity {
             // If the PlayerHolder is not bound yet, but the service is running, try to bind to it.
             // Once the connection is established, the ACTION_PLAYER_STARTED will be sent.
             PlayerHolder.getInstance().tryBindIfNeeded(this);
+        }
+    }
+
+    private void unregisterPlayerStartedReceiver() {
+        if (broadcastReceiver != null) {
+            unregisterReceiver(broadcastReceiver);
+            broadcastReceiver = null;
         }
     }
 
