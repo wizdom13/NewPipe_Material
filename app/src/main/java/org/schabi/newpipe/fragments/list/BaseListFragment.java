@@ -70,9 +70,12 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
         super.onAttach(context);
 
         if (infoListAdapter == null) {
-            infoListAdapter = new InfoListAdapter(activity);
+            infoListAdapter = new InfoListAdapter(activity, getContentBlockingTarget());
         }
     }
+
+    @NonNull
+    protected abstract ContentBlockingHelper.Target getContentBlockingTarget();
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {

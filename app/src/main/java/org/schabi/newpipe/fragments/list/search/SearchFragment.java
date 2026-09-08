@@ -72,6 +72,7 @@ import org.schabi.newpipe.local.feed.SavedSearchFeedManager;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.settings.NewPipeSettings;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.KeyboardUtil;
@@ -102,6 +103,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private static final int MENU_SAVE_SEARCH_FEED = 0x534601;
     private static final int MENU_REFRESH_SEARCH_FEED = 0x534602;
     private static final int MENU_DELETE_SEARCH_FEED = 0x534603;
+
+    @NonNull
+    @Override
+    protected ContentBlockingHelper.Target getContentBlockingTarget() {
+        return ContentBlockingHelper.Target.SEARCH;
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
     // Search

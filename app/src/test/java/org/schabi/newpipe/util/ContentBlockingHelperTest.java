@@ -81,6 +81,38 @@ class ContentBlockingHelperTest {
         assertFalse(rules.isBlocked(stream("video-1", "Video", "Channel", null)));
     }
 
+    @Test
+    void missingTargetPreferencePreservesFilteringEverywhere() {
+        for (final ContentBlockingHelper.Target target : ContentBlockingHelper.Target.values()) {
+            assertTrue(ContentBlockingHelper.isTargetEnabled(null, target));
+        }
+    }
+
+    @Test
+    void explicitTargetSelectionFiltersOnlyChosenSurfaces() {
+        final Set<String> selectedTargets = Set.of("search", "related_items");
+
+        assertTrue(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.SEARCH));
+        assertTrue(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.RELATED_ITEMS));
+        assertFalse(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.CHANNEL_PAGES));
+        assertFalse(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.SUBSCRIPTIONS));
+        assertFalse(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.REMOTE_PLAYLISTS));
+        assertFalse(ContentBlockingHelper.isTargetEnabled(
+                selectedTargets, ContentBlockingHelper.Target.COMMENTS));
+    }
+
+    @Test
+    void emptyTargetSelectionDisablesFilteringOnEverySurface() {
+        for (final ContentBlockingHelper.Target target : ContentBlockingHelper.Target.values()) {
+            assertFalse(ContentBlockingHelper.isTargetEnabled(Set.of(), target));
+        }
+    }
+
     private static StreamInfoItem stream(final String url,
                                          final String title,
                                          final String uploader,

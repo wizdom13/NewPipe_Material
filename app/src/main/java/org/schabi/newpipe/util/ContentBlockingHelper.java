@@ -29,11 +29,16 @@ public final class ContentBlockingHelper {
     }
 
     @NonNull
-    public static Rules getRules(@NonNull final Context context) {
+    public static Rules getRules(@NonNull final Context context,
+                                 @NonNull final Target target) {
         final SharedPreferences preferences = preferences(context);
+        final String targetsKey = context.getString(R.string.content_blocking_targets_key);
+        final Set<String> enabledTargets = preferences.contains(targetsKey)
+                ? copySet(preferences, targetsKey) : null;
         return Rules.create(
                 preferences.getBoolean(context.getString(
-                        R.string.content_blocking_enabled_key), true),
+                        R.string.content_blocking_enabled_key), true)
+                        && isTargetEnabled(enabledTargets, target),
                 copySet(preferences, context.getString(R.string.blocked_videos_key)),
                 copySet(preferences, context.getString(R.string.blocked_channels_key)),
                 preferences.getString(context.getString(
@@ -93,7 +98,30 @@ public final class ContentBlockingHelper {
         return context.getString(R.string.content_blocking_enabled_key).equals(key)
                 || context.getString(R.string.blocked_videos_key).equals(key)
                 || context.getString(R.string.blocked_channels_key).equals(key)
-                || context.getString(R.string.blocked_keywords_key).equals(key);
+                || context.getString(R.string.blocked_keywords_key).equals(key)
+                || context.getString(R.string.content_blocking_targets_key).equals(key);
+    }
+
+    static boolean isTargetEnabled(@Nullable final Set<String> enabledTargets,
+                                   @NonNull final Target target) {
+        return enabledTargets == null || enabledTargets.contains(target.preferenceValue);
+    }
+
+    public enum Target {
+        SEARCH("search"),
+        KIOSKS("kiosks"),
+        RELATED_ITEMS("related_items"),
+        CHANNEL_PAGES("channel_pages"),
+        SUBSCRIPTIONS("subscriptions"),
+        REMOTE_PLAYLISTS("remote_playlists"),
+        COMMENTS("comments");
+
+        @NonNull
+        private final String preferenceValue;
+
+        Target(@NonNull final String preferenceValue) {
+            this.preferenceValue = preferenceValue;
+        }
     }
 
     private static void enable(@NonNull final Context context) {

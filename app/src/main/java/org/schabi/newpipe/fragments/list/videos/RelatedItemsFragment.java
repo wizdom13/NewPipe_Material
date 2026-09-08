@@ -24,6 +24,7 @@ import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.ktx.ViewUtils;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
@@ -59,6 +60,12 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
 
     public RelatedItemsFragment() {
         super(UserAction.REQUESTED_STREAM);
+    }
+
+    @NonNull
+    @Override
+    protected ContentBlockingHelper.Target getContentBlockingTarget() {
+        return ContentBlockingHelper.Target.RELATED_ITEMS;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
