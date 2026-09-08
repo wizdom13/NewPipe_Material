@@ -316,6 +316,11 @@ class FeedLoadManager(private val context: Context) {
                     .filterIsInstance<StreamInfoItem>()
             }
 
+            FeedItemDateResolver.applyFirstSeenDates(
+                streams!!,
+                OffsetDateTime.now(ZoneOffset.UTC)
+            )
+
             return Notification.createOnNext(
                 FeedUpdateInfo(
                     subscriptionEntity,
