@@ -14,6 +14,7 @@ import org.schabi.newpipe.database.LocalItem
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.STREAM_PROGRESS_MILLIS
+import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.util.image.ExtractorImageCompat
@@ -50,6 +51,9 @@ data class StreamStatisticsEntry(
             duration = streamEntity.duration
             uploaderName = streamEntity.uploader
             uploaderUrl = streamEntity.uploaderUrl
+            uploadDate = streamEntity.uploadDate?.let {
+                DateWrapper(it, streamEntity.isUploadDateApproximation ?: false)
+            }
             ExtractorImageCompat.setThumbnailImages(
                 this,
                 ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)

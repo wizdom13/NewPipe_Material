@@ -46,6 +46,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.evernote.android.state.State
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xwray.groupie.GroupieAdapter
 import com.xwray.groupie.Item
 import com.xwray.groupie.OnItemClickListener
@@ -329,16 +330,24 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         val dialogItems = arrayOf(
             getString(R.string.feed_show_watched),
             getString(R.string.feed_show_partially_watched),
-            getString(R.string.feed_show_upcoming)
+            getString(R.string.feed_show_upcoming),
+            getString(R.string.channel_tab_livestreams),
+            getString(R.string.videos_string),
+            getString(R.string.channel_tab_shorts)
         )
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         val checkedDialogItems = booleanArrayOf(
             viewModel.getShowPlayedItemsFromPreferences(),
             viewModel.getShowPartiallyPlayedItemsFromPreferences(),
-            viewModel.getShowFutureItemsFromPreferences()
+            viewModel.getShowFutureItemsFromPreferences(),
+            preferences.getBoolean(getString(R.string.feed_show_live_items_key), true),
+            preferences.getBoolean(getString(R.string.feed_show_video_items_key), true),
+            preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true)
         )
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.feed_hide_streams_title)
             .setMultiChoiceItems(dialogItems, checkedDialogItems) { _, which, isChecked ->
                 checkedDialogItems[which] = isChecked
@@ -347,6 +356,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 viewModel.setSaveShowPlayedItems(checkedDialogItems[0])
                 viewModel.setSaveShowPartiallyPlayedItems(checkedDialogItems[1])
                 viewModel.setSaveShowFutureItems(checkedDialogItems[2])
+                preferences.edit {
+                    putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
+                    putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
+                    putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
+                }
+                latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
@@ -586,12 +601,30 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             requireContext(),
             ContentBlockingHelper.Target.SUBSCRIPTIONS
         )
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val shownStreamCategories = buildSet {
+            if (preferences.getBoolean(getString(R.string.feed_show_live_items_key), true)) {
+                add(StreamListFilter.LIVE)
+            }
+            if (preferences.getBoolean(getString(R.string.feed_show_video_items_key), true)) {
+                add(StreamListFilter.VIDEOS)
+            }
+            if (preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true)) {
+                add(StreamListFilter.SHORTS)
+            }
+            if (viewModel.getShowFutureItemsFromPreferences()) {
+                add(StreamListFilter.UPCOMING)
+            }
+        }
         val streamFilteredItems = loadedState.items.filter { item ->
             val streamWithState = item.streamWithState
             if (hideMembersOnly && streamWithState.stream.requiresMembership) {
                 return@filter false
             }
             val stream = streamWithState.stream.toStreamInfoItem()
+            if (StreamListFilter.categoryOf(stream) !in shownStreamCategories) {
+                return@filter false
+            }
             if (blockingRules.isBlocked(stream)) {
                 return@filter false
             }
