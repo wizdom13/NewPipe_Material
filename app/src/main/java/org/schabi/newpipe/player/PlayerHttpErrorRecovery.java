@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
@@ -102,7 +103,8 @@ final class PlayerHttpErrorRecovery {
 
     static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
         return isRecoverableStatusCode(findInvalidResponseCode(error))
-                || hasUnknownHostCause(error);
+                || hasUnknownHostCause(error)
+                || hasPlaylistStuckCause(error);
     }
 
     static boolean isYouTubeService(final int serviceId) {
@@ -132,6 +134,17 @@ final class PlayerHttpErrorRecovery {
         Throwable current = error;
         while (current != null) {
             if (current instanceof UnknownHostException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    static boolean hasPlaylistStuckCause(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof HlsPlaylistTracker.PlaylistStuckException) {
                 return true;
             }
             current = current.getCause();
