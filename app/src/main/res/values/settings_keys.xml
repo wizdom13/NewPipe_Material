@@ -463,6 +463,31 @@
     <string name="show_age_restricted_content">show_age_restricted_content</string>
     <string name="youtube_restricted_mode_enabled">youtube_restricted_mode_enabled</string>
     <string name="hide_members_only_videos_key">hide_members_only_videos</string>
+    <string name="content_blocking_target_search_value">search</string>
+    <string name="content_blocking_target_kiosks_value">kiosks</string>
+    <string name="content_blocking_target_related_items_value">related_items</string>
+    <string name="content_blocking_target_channel_pages_value">channel_pages</string>
+    <string name="content_blocking_target_subscriptions_value">subscriptions</string>
+    <string name="content_blocking_target_remote_playlists_value">remote_playlists</string>
+    <string name="content_blocking_target_comments_value">comments</string>
+    <string-array name="content_blocking_target_value_list">
+        <item>@string/content_blocking_target_search_value</item>
+        <item>@string/content_blocking_target_kiosks_value</item>
+        <item>@string/content_blocking_target_related_items_value</item>
+        <item>@string/content_blocking_target_channel_pages_value</item>
+        <item>@string/content_blocking_target_subscriptions_value</item>
+        <item>@string/content_blocking_target_remote_playlists_value</item>
+        <item>@string/content_blocking_target_comments_value</item>
+    </string-array>
+    <string-array name="content_blocking_target_description_list">
+        <item>@string/content_blocking_target_search</item>
+        <item>@string/content_blocking_target_kiosks</item>
+        <item>@string/content_blocking_target_related_items</item>
+        <item>@string/content_blocking_target_channel_pages</item>
+        <item>@string/content_blocking_target_subscriptions</item>
+        <item>@string/content_blocking_target_remote_playlists</item>
+        <item>@string/content_blocking_target_comments</item>
+    </string-array>
     <string name="enable_search_history_key">enable_search_history</string>
     <string name="enable_watch_history_key">enable_watch_history</string>
     <string name="main_page_content_key">main_page_content</string>

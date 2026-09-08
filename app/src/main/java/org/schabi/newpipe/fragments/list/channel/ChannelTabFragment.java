@@ -37,6 +37,7 @@ import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.ChannelTabPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.util.ChannelTabHelper;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -93,6 +94,12 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
 
     public ChannelTabFragment() {
         super(UserAction.REQUESTED_CHANNEL);
+    }
+
+    @NonNull
+    @Override
+    protected ContentBlockingHelper.Target getContentBlockingTarget() {
+        return ContentBlockingHelper.Target.CHANNEL_PAGES;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

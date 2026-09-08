@@ -11,6 +11,16 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <MultiSelectListPreference
+        android:defaultValue="@array/content_blocking_target_value_list"
+        android:entries="@array/content_blocking_target_description_list"
+        android:entryValues="@array/content_blocking_target_value_list"
+        android:key="@string/content_blocking_targets_key"
+        android:summary="@string/content_blocking_targets_summary"
+        android:title="@string/content_blocking_targets_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <EditTextPreference
         android:dialogTitle="@string/blocked_keywords_title"
         android:key="@string/blocked_keywords_key"

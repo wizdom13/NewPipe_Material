@@ -409,6 +409,7 @@
     <string name="content">Content</string>
     <string name="content_blocking_settings_key" translatable="false">content_blocking_settings</string>
     <string name="content_blocking_enabled_key" translatable="false">content_blocking_enabled</string>
+    <string name="content_blocking_targets_key" translatable="false">content_blocking_targets</string>
     <string name="blocked_videos_key" translatable="false">blocked_videos</string>
     <string name="blocked_channels_key" translatable="false">blocked_channels</string>
     <string name="blocked_keywords_key" translatable="false">blocked_keywords</string>
@@ -419,6 +420,15 @@
     <string name="content_blocking_summary">Hide videos, channels, and posts using your blocking rules</string>
     <string name="content_blocking_enabled_title">Enable content blocking</string>
     <string name="content_blocking_enabled_summary">Apply blocked videos, channels, and keywords to remote content lists</string>
+    <string name="content_blocking_targets_title">Apply blocking to</string>
+    <string name="content_blocking_targets_summary">Choose which remote content lists use your blocking rules</string>
+    <string name="content_blocking_target_search">Search results</string>
+    <string name="content_blocking_target_kiosks">Kiosks and What’s New</string>
+    <string name="content_blocking_target_related_items">Related items</string>
+    <string name="content_blocking_target_channel_pages">Channel pages</string>
+    <string name="content_blocking_target_subscriptions">Subscriptions and channel groups</string>
+    <string name="content_blocking_target_remote_playlists">Remote playlists</string>
+    <string name="content_blocking_target_comments">Comments</string>
     <string name="blocked_keywords_title">Blocked keywords</string>
     <string name="manage_blocked_channels_title">Blocked channels</string>
     <string name="manage_blocked_videos_title">Blocked videos</string>

@@ -582,7 +582,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
 
         val hideMembersOnly = MembersOnlyContentHelper.shouldHide(requireContext())
-        val blockingRules = ContentBlockingHelper.getRules(requireContext())
+        val blockingRules = ContentBlockingHelper.getRules(
+            requireContext(),
+            ContentBlockingHelper.Target.SUBSCRIPTIONS
+        )
         val streamFilteredItems = loadedState.items.filter { item ->
             val streamWithState = item.streamWithState
             if (hideMembersOnly && streamWithState.stream.requiresMembership) {
