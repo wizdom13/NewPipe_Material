@@ -138,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean servicesShown = false;
     private boolean contextualSearchToolbarActive;
+    private boolean activityStarted;
 
     private BroadcastReceiver broadcastReceiver;
     private final Map<Integer, HomeDrawerPolicy.KioskTarget> drawerKioskTargets = new HashMap<>();
@@ -234,8 +235,6 @@ public class MainActivity extends AppCompatActivity {
         if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
-        openMiniPlayerUponPlayerStarted();
-
         if (PermissionHelper.checkPostNotificationsPermission(this,
                 PermissionHelper.POST_NOTIFICATIONS_REQUEST_CODE)) {
             // Schedule worker for checking for new streams and creating corresponding notifications
@@ -276,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        activityStarted = true;
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, false).apply();
         Log.d(TAG, "App moved to foreground");
         nativePipController.onMainActivityStarted();
@@ -284,6 +284,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        activityStarted = false;
         unregisterPlayerStartedReceiver();
         super.onStop();
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, true).apply();
@@ -1286,11 +1287,13 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (PlayerHolder.getInstance().isPlayerOpen()) {
+        final boolean playerOpen = PlayerHolder.getInstance().isPlayerOpen();
+        if (playerOpen) {
             // if the player is already open, no need for a broadcast receiver
             openMiniPlayerIfMissing();
         } else {
-            if (broadcastReceiver != null) {
+            if (!shouldRegisterPlayerStartedReceiver(
+                    activityStarted, playerOpen, broadcastReceiver != null)) {
                 return;
             }
             // listen for player start intent being sent around
@@ -1323,6 +1326,12 @@ public class MainActivity extends AppCompatActivity {
             unregisterReceiver(broadcastReceiver);
             broadcastReceiver = null;
         }
+    }
+
+    static boolean shouldRegisterPlayerStartedReceiver(final boolean activityStarted,
+                                                       final boolean playerOpen,
+                                                       final boolean receiverRegistered) {
+        return activityStarted && !playerOpen && !receiverRegistered;
     }
 
     private void openDetailFragmentFromCommentReplies(
