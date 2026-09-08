@@ -9,6 +9,7 @@ import org.schabi.newpipe.extractor.*;
 import org.schabi.newpipe.extractor.channel.StaffInfoItem;
 import org.schabi.newpipe.extractor.downloader.CancellableCall;
 import org.schabi.newpipe.extractor.downloader.Downloader;
+import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.exceptions.*;
 import org.schabi.newpipe.extractor.linkhandler.LinkHandler;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
@@ -394,20 +395,33 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             String url = getLinkHandler().getOriginalUrl();
             bvid = utils.getPureBV(getId());
             url = utils.getUrl(url, bvid);
-            String response = downloader.get(url,
-                    getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle") != null ? getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle") : getHeaders(getOriginalUrl())
-            ).responseBody();
-            try {
-                watch = JsonParser.object().from(response).getObject("data");
-            } catch (JsonParserException e) {
-                e.printStackTrace();
+            final Map<String, List<String>> metadataHeaders =
+                    getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle") != null
+                            ? getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle")
+                            : getHeaders(getOriginalUrl());
+            final JsonObject metadataResponse = parseBilibiliResponse(
+                    downloader.get(url, metadataHeaders));
+            watch = metadataResponse.getObject("data");
+            if (watch == null) {
+                final String message = metadataResponse.getString("message");
+                throw new ContentNotAvailableException(
+                        message == null || message.isBlank()
+                                ? "BiliBili did not return video metadata"
+                                : message
+                );
             }
             String pageNumString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getUrl()), "p");
             int pageNum = 1;
             if (pageNumString != null) {
                 pageNum = Integer.parseInt(pageNumString);
             }
-            page = watch.getArray("pages").getObject(pageNum - 1);
+            final JsonArray pages = watch.getArray("pages");
+            if (pages == null || pageNum < 1 || pageNum > pages.size()) {
+                throw new ContentNotAvailableException(
+                        "BiliBili did not return metadata for video part " + pageNum
+                );
+            }
+            page = pages.getObject(pageNum - 1);
             cid = page.getLong("cid");
             watchDataCache.setCid(getId(), cid);
             watchDataCache.setBvid(getId(), bvid);
@@ -492,34 +506,60 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             finalUrl = baseUrl + "?" + createQueryString(params);
         }
 
-        String response = getDownloader().get(finalUrl, headers).responseBody();
-        try {
-            playData = JsonParser.object().from(response);
-            switch (playData.getInt("code")) {
-                case 0:
-                    break;
-                case -10403:
-                default:
-                    String message = playData.getString("message");
-                    if (message.contains("地区")) {
-                        throw new GeographicRestrictionException(message);
-                    }
-                    throw new ContentNotAvailableException(message);
-            }
-            JsonObject dataParentObject = (isPremiumContent == 1 ? playData.getObject("result").getObject("video_info") : playData.getObject("data"));
-            dataObject = dataParentObject.getObject("dash");
-            if (dataObject.size() == 0) {
-                throw new PaidContentException("Paid content");
-                //dataArray = dataParentObject.getArray("durl");
-            } else {
-                buildStreams();
-            }
-            if (isPaid == 1 && videoOnlyStreams.size() + audioStreams.size() == 0) {
-                throw new PaidContentException("Paid content");
-            }
-        } catch (JsonParserException e) {
-            e.printStackTrace();
+        playData = parseBilibiliResponse(getDownloader().get(finalUrl, headers));
+        switch (playData.getInt("code")) {
+            case 0:
+                break;
+            case -10403:
+            default:
+                final String message = playData.getString("message");
+                if (message.contains("地区")) {
+                    throw new GeographicRestrictionException(message);
+                }
+                throw new ContentNotAvailableException(message);
         }
+        final JsonObject dataParentObject = isPremiumContent == 1
+                ? playData.getObject("result").getObject("video_info")
+                : playData.getObject("data");
+        dataObject = dataParentObject.getObject("dash");
+        if (dataObject.size() == 0) {
+            throw new PaidContentException("Paid content");
+            //dataArray = dataParentObject.getArray("durl");
+        } else {
+            buildStreams();
+        }
+        if (isPaid == 1 && videoOnlyStreams.size() + audioStreams.size() == 0) {
+            throw new PaidContentException("Paid content");
+        }
+    }
+
+    static JsonObject parseBilibiliResponse(final Response response) throws ExtractionException {
+        final String responseBody = BilibiliChannelExtractor.stripLeadingBomAndWhitespace(
+                response.responseBody());
+        if (BilibiliChannelExtractor.isRiskControlResponse(
+                response.responseCode(), responseBody)) {
+            throw new ServiceTemporaryBlockedException(
+                    "BiliBili temporarily blocked requests from this network"
+            );
+        }
+
+        final JsonObject responseJson;
+        try {
+            responseJson = JsonParser.object().from(responseBody);
+        } catch (final JsonParserException error) {
+            throw new ParsingException(
+                    "BiliBili returned an invalid response (HTTP "
+                            + response.responseCode() + ")",
+                    error
+            );
+        }
+
+        if (responseJson.getLong("code") == -352) {
+            throw new ServiceTemporaryBlockedException(
+                    "BiliBili temporarily blocked requests from this network"
+            );
+        }
+        return responseJson;
     }
 
     @Nonnull
