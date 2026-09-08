@@ -4,6 +4,25 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.16.0 (`1016000`)
+
+### New features
+
+- Added an **Apply blocking to** selector so content-blocking rules can be enabled separately for
+  search results, kiosks and What’s New, related items, channel pages, subscriptions and channel
+  groups, remote playlists, and comments.
+
+### Fixes
+
+- Fixed fullscreen requests being lost while the detail layout was recreated in landscape and
+  restored custom notification actions when Android System UI connects to the media session.
+- Prevented the player-start receiver from restarting the player service while WizeStream is in the
+  background.
+- Improved BiliBili risk-control, invalid-response, missing-metadata, and unavailable-video handling
+  so these conditions produce clear errors instead of malformed playback states.
+
+[View the complete changes since v1.15.2](https://github.com/wizdom13/WizeStream/compare/v1.15.2...v1.16.0)
+
 ## WizeStream 1.15.2 (`1015002`)
 
 ### Fixes
