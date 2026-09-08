@@ -27,13 +27,15 @@ data class FeedUpdateInfo(
     val description: String?,
     val subscriberCount: Long?,
     val streams: List<StreamInfoItem>,
-    val errors: List<Throwable>
+    val errors: List<Throwable>,
+    val repositionExistingShorts: Boolean
 ) {
     constructor(
         subscription: SubscriptionEntity,
         info: Info,
         streams: List<StreamInfoItem>,
-        errors: List<Throwable>
+        errors: List<Throwable>,
+        repositionExistingShorts: Boolean
     ) : this(
         uid = subscription.uid,
         notificationMode = subscription.notificationMode,
@@ -50,7 +52,8 @@ data class FeedUpdateInfo(
         description = (info as? ChannelInfo)?.description,
         subscriberCount = (info as? ChannelInfo)?.subscriberCount,
         streams = streams,
-        errors = errors
+        errors = errors,
+        repositionExistingShorts = repositionExistingShorts
     )
 
     /**

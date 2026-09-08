@@ -19,12 +19,14 @@ class FeedItemDateResolverTest {
         val first = stream("https://youtube.com/shorts/first", isShort = true)
         val second = stream("https://youtube.com/shorts/second", isShort = true)
 
-        FeedItemDateResolver.applyFirstSeenDates(listOf(first, second), fetchedAt)
+        val shouldReposition =
+            FeedItemDateResolver.applyApproximateDates(listOf(first, second), fetchedAt)
 
         assertEquals(fetchedAt, first.uploadDate!!.offsetDateTime())
         assertEquals(fetchedAt.minusSeconds(1), second.uploadDate!!.offsetDateTime())
         assertTrue(first.uploadDate!!.isApproximation)
         assertTrue(second.uploadDate!!.isApproximation)
+        assertFalse(shouldReposition)
     }
 
     @Test
@@ -35,11 +37,47 @@ class FeedItemDateResolverTest {
         }
         val regularVideo = stream("https://youtube.com/watch?v=regular", isShort = false)
 
-        FeedItemDateResolver.applyFirstSeenDates(listOf(datedShort, regularVideo), fetchedAt)
+        FeedItemDateResolver.applyApproximateDates(listOf(datedShort, regularVideo), fetchedAt)
 
         assertEquals(originalDate, datedShort.uploadDate)
         assertFalse(datedShort.uploadDate!!.isApproximation)
         assertNull(regularVideo.uploadDate)
+    }
+
+    @Test
+    fun `undated shorts are distributed between dated channel items`() {
+        val newestVideo = stream("https://youtube.com/watch?v=newest", isShort = false).apply {
+            uploadDate = DateWrapper(fetchedAt.minusDays(1))
+        }
+        val oldestVideo = stream("https://youtube.com/watch?v=oldest", isShort = false).apply {
+            uploadDate = DateWrapper(fetchedAt.minusDays(11))
+        }
+        val firstShort = stream("https://youtube.com/shorts/first", isShort = true)
+        val secondShort = stream("https://youtube.com/shorts/second", isShort = true)
+        val thirdShort = stream("https://youtube.com/shorts/third", isShort = true)
+
+        val shouldReposition = FeedItemDateResolver.applyApproximateDates(
+            listOf(newestVideo, oldestVideo, firstShort, secondShort, thirdShort),
+            fetchedAt
+        )
+
+        assertEquals(
+            fetchedAt.minusDays(3).minusHours(12),
+            firstShort.uploadDate!!.offsetDateTime()
+        )
+        assertEquals(fetchedAt.minusDays(6), secondShort.uploadDate!!.offsetDateTime())
+        assertEquals(
+            fetchedAt.minusDays(8).minusHours(12),
+            thirdShort.uploadDate!!.offsetDateTime()
+        )
+        assertTrue(firstShort.uploadDate!!.isApproximation)
+        assertTrue(
+            firstShort.uploadDate!!.offsetDateTime() > secondShort.uploadDate!!.offsetDateTime()
+        )
+        assertTrue(
+            secondShort.uploadDate!!.offsetDateTime() > thirdShort.uploadDate!!.offsetDateTime()
+        )
+        assertTrue(shouldReposition)
     }
 
     private fun stream(url: String, isShort: Boolean) = StreamInfoItem(
