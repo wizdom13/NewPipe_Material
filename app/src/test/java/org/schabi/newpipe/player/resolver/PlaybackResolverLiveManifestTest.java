@@ -17,7 +17,15 @@ public class PlaybackResolverLiveManifestTest {
     public void manifestOnlyYoutubeLivePrefersRefreshableHls() {
         final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
 
-        assertTrue(PlaybackResolver.shouldPreferHlsForManifestOnlyYoutubeLive(info));
+        assertTrue(PlaybackResolver.isManifestOnlyYoutubeLive(info));
+    }
+
+    @Test
+    public void misclassifiedManifestOnlyYoutubeLiveStillUsesHls() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        info.setStreamType(StreamType.VIDEO_STREAM);
+
+        assertTrue(PlaybackResolver.isManifestOnlyYoutubeLive(info));
     }
 
     @Test
@@ -25,14 +33,30 @@ public class PlaybackResolverLiveManifestTest {
         final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
         info.setVideoStreams(Collections.singletonList(mock(VideoStream.class)));
 
-        assertFalse(PlaybackResolver.shouldPreferHlsForManifestOnlyYoutubeLive(info));
+        assertFalse(PlaybackResolver.isManifestOnlyYoutubeLive(info));
+    }
+
+    @Test
+    public void youtubeLiveWithVideoOnlyStreamsRetainsDirectStreamSelection() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        info.setVideoOnlyStreams(Collections.singletonList(mock(VideoStream.class)));
+
+        assertFalse(PlaybackResolver.isManifestOnlyYoutubeLive(info));
     }
 
     @Test
     public void nonYoutubeManifestOnlyLiveRetainsDashPreference() {
         final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId() + 1);
 
-        assertFalse(PlaybackResolver.shouldPreferHlsForManifestOnlyYoutubeLive(info));
+        assertFalse(PlaybackResolver.isManifestOnlyYoutubeLive(info));
+    }
+
+    @Test
+    public void youtubeWithoutHlsDoesNotUseManifestOnlyFallback() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        info.setHlsUrl("");
+
+        assertFalse(PlaybackResolver.isManifestOnlyYoutubeLive(info));
     }
 
     private static StreamInfo createLiveInfo(final int serviceId) {
