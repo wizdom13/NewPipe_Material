@@ -196,7 +196,9 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
     @Nullable
     static MediaSource maybeBuildLiveMediaSource(final PlayerDataSource dataSource,
                                                  final StreamInfo info) {
-        if (!StreamTypeUtil.isLiveStream(info.getStreamType())) {
+        final boolean isManifestOnlyYoutubeLive = isManifestOnlyYoutubeLive(info);
+        if (!StreamTypeUtil.isLiveStream(info.getStreamType())
+                && !isManifestOnlyYoutubeLive) {
             return null;
         }
 
@@ -204,8 +206,9 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             final StreamInfoTag tag = StreamInfoTag.of(info);
             // Manifest-only YouTube lives can expose a finite DASH DVR window whose declared end
             // is only a few seconds beyond the initial live edge. HLS keeps refreshing its media
-            // playlist, so prefer it for this narrow fallback path.
-            if (shouldPreferHlsForManifestOnlyYoutubeLive(info)) {
+            // playlist, so prefer it for this narrow fallback path. Some YouTube client responses
+            // also misclassify these lives as regular videos, so do not rely on the stream type.
+            if (isManifestOnlyYoutubeLive) {
                 return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
             }
             // Prefer DASH over HLS because of an exoPlayer bug that causes the background player to
@@ -225,11 +228,11 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
         return null;
     }
 
-    static boolean shouldPreferHlsForManifestOnlyYoutubeLive(final StreamInfo info) {
+    static boolean isManifestOnlyYoutubeLive(final StreamInfo info) {
         return info.getServiceId() == ServiceList.YouTube.getServiceId()
-                && StreamTypeUtil.isLiveStream(info.getStreamType())
                 && info.getAudioStreams().isEmpty()
                 && info.getVideoStreams().isEmpty()
+                && info.getVideoOnlyStreams().isEmpty()
                 && !info.getHlsUrl().isEmpty();
     }
 
