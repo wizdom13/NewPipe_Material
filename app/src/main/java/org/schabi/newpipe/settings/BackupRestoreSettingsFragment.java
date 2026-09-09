@@ -30,6 +30,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.subscription.SubscriptionsImportExportHelper;
 import org.schabi.newpipe.settings.export.BackupFileLocator;
 import org.schabi.newpipe.settings.export.ImportExportManager;
+import org.schabi.newpipe.settings.export.NewPipeCompatibleExportManager;
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
@@ -69,11 +70,15 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private final ActivityResultLauncher<Intent> requestExportPathLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     this::requestExportPathResult);
+    private final ActivityResultLauncher<Intent> requestCompatibleExportPathLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    this::requestCompatibleExportPathResult);
     private final ActivityResultLauncher<Intent> requestMigrationPathLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     this::requestMigrationPathResult);
     private SubscriptionsImportExportHelper importExportHelper;
     private NewPipeDataMigrationManager migrationManager;
+    private NewPipeCompatibleExportManager compatibleExportManager;
 
 
     @Override
@@ -87,6 +92,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                     @Nullable final String rootKey) {
         manager = new ImportExportManager(new BackupFileLocator(requireContext()));
         migrationManager = new NewPipeDataMigrationManager(requireContext());
+        compatibleExportManager = new NewPipeCompatibleExportManager(requireContext());
 
         importExportDataPathKey = getString(R.string.import_export_data_path);
 
@@ -129,6 +135,20 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     getContext()
             );
 
+            return true;
+        });
+
+        final Preference exportCompatiblePreference =
+                requirePreference(R.string.export_compatible_data_key);
+        exportCompatiblePreference.setOnPreferenceClickListener(preference -> {
+            NoFileManagerSafeGuard.launchSafe(
+                    requestCompatibleExportPathLauncher,
+                    StoredFileHelper.getNewSystemPicker(requireContext(),
+                            "NewPipeData-" + exportDateFormat.format(new Date()) + ".zip",
+                            ZIP_MIME_TYPE, getImportExportDataUri()),
+                    TAG,
+                    getContext()
+            );
             return true;
         });
 
@@ -181,6 +201,15 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     requireContext(), result.getData().getData(), ZIP_MIME_TYPE);
 
             exportDatabase(file, lastExportDataUri);
+        }
+    }
+
+    private void requestCompatibleExportPathResult(final ActivityResult result) {
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+            final Uri exportDataUri = result.getData().getData();
+            final StoredFileHelper file = new StoredFileHelper(
+                    requireContext(), exportDataUri, ZIP_MIME_TYPE);
+            exportNewPipeCompatibleData(file, exportDataUri);
         }
     }
 
@@ -424,6 +453,40 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         } catch (final Exception e) {
             showErrorSnackbar(e, "Exporting database and settings");
         }
+    }
+
+    private void exportNewPipeCompatibleData(final StoredFileHelper file,
+                                             final Uri exportDataUri) {
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                NewPipeDatabase.checkpoint();
+                final NewPipeCompatibleExportManager.ExportResult exportResult =
+                        compatibleExportManager.export(file);
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        saveLastImportExportDataUri(exportDataUri);
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(R.string.export_compatible_data_complete_title)
+                                .setMessage(getString(
+                                        R.string.export_compatible_data_complete_message,
+                                        exportResult.getSubscriptions(),
+                                        exportResult.getHistoryItems(),
+                                        exportResult.getProgressItems(),
+                                        exportResult.getSkippedItems()))
+                                .setPositiveButton(R.string.ok, null)
+                                .show();
+                    });
+                }
+            } catch (final Exception e) {
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() ->
+                            showErrorSnackbar(e, "Exporting NewPipe-compatible data"));
+                }
+            } finally {
+                executor.shutdown();
+            }
+        });
     }
 
     private void showImportConfirmation(final StoredFileHelper file, final Uri importDataUri) {
