@@ -2,6 +2,7 @@ package org.schabi.newpipe.player.helper;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -36,15 +37,26 @@ public class PlayerHelperAutoQueueTest {
     }
 
     @Test
-    public void fallsBackToRegularRelatedVideoWhenNoShortIsAvailable() {
+    public void stopsShortFormQueueWhenNoShortIsAvailable() {
         final StreamInfoItem longVideo = stream("long", false);
         final StreamInfo info = infoWithRelated(longVideo);
 
         final PlayQueue queue = PlayerHelper.autoQueueOf(
                 info, Collections.emptyList(), true);
 
-        assertNotNull(queue);
-        assertEquals(longVideo.getUrl(), queue.getItem().getUrl());
+        assertNull(queue);
+    }
+
+    @Test
+    public void stopsShortFormQueueWhenOnlyShortIsAlreadyQueued() {
+        final StreamInfoItem longVideo = stream("long", false);
+        final StreamInfoItem repeatedShort = stream("short", true);
+        final StreamInfo info = infoWithRelated(longVideo, repeatedShort);
+
+        final PlayQueue queue = PlayerHelper.autoQueueOf(
+                info, List.of(new PlayQueueItem(repeatedShort)), true);
+
+        assertNull(queue);
     }
 
     @Test
