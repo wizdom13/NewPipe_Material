@@ -161,10 +161,10 @@ public final class PlayerHelper {
      * if a candidate next video's url already exists in the existing items.
      * </p>
      * <p>
-     * For short-form playback, the first non-repeating short-form related stream is preferred.
-     * If none is available, the first related stream is checked. If that stream is unavailable or
-     * already queued, a random stream with a non-repeating URL is selected from
-     * {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
+     * For short-form playback, only a non-repeating short-form related stream is returned. If none
+     * is available, auto-queueing stops instead of switching into regular video playback. For
+     * regular playback, the first related stream is checked before selecting a random
+     * non-repeating stream. Non-stream items are ignored.
      * </p>
      *
      * @param info                   currently playing stream
@@ -193,6 +193,7 @@ public final class PlayerHelper {
                     return getAutoQueuedSinglePlayQueue((StreamInfoItem) item);
                 }
             }
+            return null;
         }
 
         if (relatedItems.get(0) instanceof StreamInfoItem
