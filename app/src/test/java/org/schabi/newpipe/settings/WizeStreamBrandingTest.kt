@@ -23,6 +23,10 @@ class WizeStreamBrandingTest {
             "import_settings_vulnerable_format",
             "import_compatible_data_title",
             "import_compatible_data_summary",
+            "export_compatible_data_title",
+            "export_compatible_data_summary",
+            "export_compatible_data_complete_title",
+            "export_compatible_data_complete_message",
             "migration_invalid_backup"
         )
 

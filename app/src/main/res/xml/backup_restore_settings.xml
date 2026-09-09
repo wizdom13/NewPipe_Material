@@ -31,6 +31,13 @@
         app:iconSpaceReserved="false" />
 
     <Preference
+        android:key="@string/export_compatible_data_key"
+        android:summary="@string/export_compatible_data_summary"
+        android:title="@string/export_compatible_data_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false" />
+
+    <Preference
         android:key="@string/reset_settings"
         android:title="@string/reset_settings_title"
         android:summary="@string/reset_settings_summary"
