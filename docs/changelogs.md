@@ -4,6 +4,24 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.16.1 (`1016001`)
+
+### New features
+
+- Added an **Upcoming** stream filter and controls to show or hide live streams, videos, and Shorts
+  in What’s New.
+
+### Fixes
+
+- Restored Shorts that had missing dates in subscription feeds and distributed their approximate
+  dates so they no longer dominate the top of What’s New.
+- Fixed subscription-file imports and restored subscription migration from NewPipe and PipePipe
+  backups.
+- Added automatic recovery when a YouTube HLS playlist becomes stuck during playback.
+- Smoothed audio visualizer animations after the Media3 migration by pacing decoded audio frames.
+
+[View the complete changes since v1.16.0](https://github.com/wizdom13/WizeStream/compare/v1.16.0...v1.16.1)
+
 ## WizeStream 1.16.0 (`1016000`)
 
 ### New features

@@ -1,0 +1,5 @@
+• Restored and balanced Shorts in subscription feeds.
+• Added Upcoming, Live, Videos, and Shorts feed controls.
+• Fixed subscription imports and restored migration from NewPipe/PipePipe backups.
+• Added automatic recovery for stuck YouTube HLS playlists.
+• Smoothed audio visualizer animations after the Media3 migration.
