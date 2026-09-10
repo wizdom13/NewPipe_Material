@@ -34,7 +34,6 @@ public final class DeviceUtils {
 
     private static final String AMAZON_FEATURE_FIRE_TV = "amazon.hardware.fire_tv";
     private static final boolean SAMSUNG = Build.MANUFACTURER.equals("samsung");
-    private static final int DESKTOP_POINTER_MIN_SMALLEST_WIDTH_DP = 600;
     private static Boolean isTV = null;
     private static Boolean isFireTV = null;
 
@@ -186,7 +185,7 @@ public final class DeviceUtils {
                 break;
             }
         }
-        if (shouldTreatCursorInputAsDesktop(hasActiveCursor,
+        if (DesktopModeDetector.shouldTreatCursorInputAsDesktop(hasActiveCursor,
                 context.getResources().getConfiguration().smallestScreenWidthDp)) {
             return true;
         }
@@ -243,12 +242,6 @@ public final class DeviceUtils {
         }
 
         return false;
-    }
-
-    static boolean shouldTreatCursorInputAsDesktop(final boolean cursorInputAvailable,
-                                                   final int smallestScreenWidthDp) {
-        return cursorInputAvailable
-                && smallestScreenWidthDp >= DESKTOP_POINTER_MIN_SMALLEST_WIDTH_DP;
     }
 
     public static boolean isTablet(@NonNull final Context context) {
