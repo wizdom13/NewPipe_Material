@@ -170,18 +170,26 @@ public final class DeviceUtils {
      */
     @SuppressWarnings("JavaReflectionMemberAccess")
     public static boolean isDesktopMode(@NonNull final Context context) {
-        // Adapted from https://stackoverflow.com/a/64615568
-        // to check for all input devices that have an active cursor
+        // Pointer-capable virtual devices can be exposed on phones by OEM Android builds.
+        // Only use an enabled cursor device as a desktop signal on a large-screen
+        // configuration; UiModeManager and the Samsung checks below remain authoritative.
         final InputManager im = (InputManager) context.getSystemService(INPUT_SERVICE);
+        boolean hasActiveCursor = false;
         for (final int id : im.getInputDeviceIds()) {
             final InputDevice inputDevice = im.getInputDevice(id);
-            if (inputDevice.supportsSource(InputDevice.SOURCE_BLUETOOTH_STYLUS)
-                    || inputDevice.supportsSource(InputDevice.SOURCE_MOUSE)
-                    || inputDevice.supportsSource(InputDevice.SOURCE_STYLUS)
+            if (inputDevice != null
+                    && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1
+                    || inputDevice.isEnabled())
+                    && (inputDevice.supportsSource(InputDevice.SOURCE_MOUSE)
                     || inputDevice.supportsSource(InputDevice.SOURCE_TOUCHPAD)
-                    || inputDevice.supportsSource(InputDevice.SOURCE_TRACKBALL)) {
-                return true;
+                    || inputDevice.supportsSource(InputDevice.SOURCE_TRACKBALL))) {
+                hasActiveCursor = true;
+                break;
             }
+        }
+        if (DesktopModeDetector.shouldTreatCursorInputAsDesktop(hasActiveCursor,
+                context.getResources().getConfiguration().smallestScreenWidthDp)) {
+            return true;
         }
 
         final UiModeManager uiModeManager =
