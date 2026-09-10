@@ -160,7 +160,8 @@ public final class PlayQueueActivity extends AppCompatActivity
             menu.findItem(R.id.action_equalizer)
                     .setChecked(player.getEqualizerState().isEnabled());
             menu.findItem(R.id.action_visualizer)
-                    .setVisible(player.audioPlayerSelected());
+                    .setVisible(player.audioPlayerSelected()
+                            && queueControlBinding.audioVisualizer != null);
             final PlayQueueItem currentItem = player.getPlayQueue() == null
                     ? null : player.getPlayQueue().getItem();
             menu.findItem(R.id.action_browse_local_media)
@@ -359,6 +360,12 @@ public final class PlayQueueActivity extends AppCompatActivity
         final boolean showVisualizer = visualizerVisible
                 && player != null
                 && player.audioPlayerSelected();
+        if (queueControlBinding.audioVisualizer == null) {
+            visualizerVisible = false;
+            queueControlBinding.playQueue.setVisibility(View.VISIBLE);
+            updateVisualizerMenuItem();
+            return;
+        }
         queueControlBinding.playQueue.setVisibility(showVisualizer ? View.GONE : View.VISIBLE);
         queueControlBinding.audioVisualizer.setVisibility(
                 showVisualizer ? View.VISIBLE : View.GONE);
@@ -374,7 +381,9 @@ public final class PlayQueueActivity extends AppCompatActivity
     }
 
     private void suspendVisualizerProcessing() {
-        queueControlBinding.audioVisualizer.setAudioProcessor(null);
+        if (queueControlBinding.audioVisualizer != null) {
+            queueControlBinding.audioVisualizer.setAudioProcessor(null);
+        }
         if (player != null
                 && player.audioPlayerSelected()
                 && player.getPlaybackPresentationMode()
