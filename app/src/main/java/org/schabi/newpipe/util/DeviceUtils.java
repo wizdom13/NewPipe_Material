@@ -177,7 +177,9 @@ public final class DeviceUtils {
         boolean hasActiveCursor = false;
         for (final int id : im.getInputDeviceIds()) {
             final InputDevice inputDevice = im.getInputDevice(id);
-            if (inputDevice != null && inputDevice.isEnabled()
+            if (inputDevice != null
+                    && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1
+                    || inputDevice.isEnabled())
                     && (inputDevice.supportsSource(InputDevice.SOURCE_MOUSE)
                     || inputDevice.supportsSource(InputDevice.SOURCE_TOUCHPAD)
                     || inputDevice.supportsSource(InputDevice.SOURCE_TRACKBALL))) {
