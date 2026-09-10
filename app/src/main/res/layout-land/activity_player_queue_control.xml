@@ -42,6 +42,19 @@
         app:layoutManager="LinearLayoutManager"
         tools:listitem="@layout/play_queue_item" />
 
+    <org.schabi.newpipe.views.AudioVisualizerView
+        android:id="@+id/audio_visualizer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/progress_bar"
+        android:layout_below="@id/appbar"
+        android:layout_toStartOf="@id/control_pane"
+        android:layout_toLeftOf="@id/control_pane"
+        android:background="?attr/colorSurface"
+        android:contentDescription="@string/audio_visualizer"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <RelativeLayout
         android:id="@+id/control_pane"
         android:layout_width="200dp"
