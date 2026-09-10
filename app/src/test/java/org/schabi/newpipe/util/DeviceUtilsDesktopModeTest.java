@@ -8,18 +8,18 @@ import org.junit.Test;
 public class DeviceUtilsDesktopModeTest {
     @Test
     public void phonePointerDoesNotEnableDesktopMode() {
-        assertFalse(DeviceUtils.shouldTreatCursorInputAsDesktop(true, 411));
-        assertFalse(DeviceUtils.shouldTreatCursorInputAsDesktop(true, 599));
+        assertFalse(DesktopModeDetector.shouldTreatCursorInputAsDesktop(true, 411));
+        assertFalse(DesktopModeDetector.shouldTreatCursorInputAsDesktop(true, 599));
     }
 
     @Test
     public void largeScreenPointerCanEnableDesktopMode() {
-        assertTrue(DeviceUtils.shouldTreatCursorInputAsDesktop(true, 600));
-        assertTrue(DeviceUtils.shouldTreatCursorInputAsDesktop(true, 840));
+        assertTrue(DesktopModeDetector.shouldTreatCursorInputAsDesktop(true, 600));
+        assertTrue(DesktopModeDetector.shouldTreatCursorInputAsDesktop(true, 840));
     }
 
     @Test
     public void largeScreenWithoutPointerDoesNotUsePointerFallback() {
-        assertFalse(DeviceUtils.shouldTreatCursorInputAsDesktop(false, 840));
+        assertFalse(DesktopModeDetector.shouldTreatCursorInputAsDesktop(false, 840));
     }
 }
