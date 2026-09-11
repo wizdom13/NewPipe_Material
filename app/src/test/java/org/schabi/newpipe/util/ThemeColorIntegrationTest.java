@@ -62,6 +62,8 @@ public class ThemeColorIntegrationTest {
         final String baseTheme = styleBody(styles, "Base.V21");
         assertTrue(baseTheme.contains(
                 "<item name=\"colorControlActivated\">?attr/colorPrimary</item>"));
+        assertTrue(baseTheme.contains(
+                "<item name=\"android:textColorLink\">?attr/colorPrimary</item>"));
         assertFalse(baseTheme.contains(
                 "<item name=\"colorControlActivated\">?attr/colorSecondary</item>"));
     }
