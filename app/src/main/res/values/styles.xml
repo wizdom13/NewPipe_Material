@@ -23,6 +23,7 @@
         <item name="snackbarTextViewStyle">@style/Widget.wizestream.Snackbar.TextView</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="android:textColorLink">?attr/colorPrimary</item>
     </style>
     <style name="Base" parent="Base.V21"/>
 
