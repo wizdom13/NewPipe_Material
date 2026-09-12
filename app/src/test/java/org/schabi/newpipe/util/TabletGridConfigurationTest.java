@@ -82,15 +82,6 @@ public class TabletGridConfigurationTest {
                             + "            android:layout_width=\"match_parent\"\n"
                             + "            android:layout_height=\"match_parent\""));
         }
-
-        final String playlist = read(
-                "app/src/main/res/layout/list_playlist_grid_item.xml");
-        assertTrue(playlist.contains(
-                "android:id=\"@+id/itemThumbnailView\"\n"
-                        + "        android:layout_width=\"0dp\"\n"
-                        + "        android:layout_height=\"0dp\""));
-        assertTrue(playlist.contains(
-                "app:layout_constraintDimensionRatio=\"H,16:9\""));
     }
 
     private String read(final String relativePath) throws Exception {

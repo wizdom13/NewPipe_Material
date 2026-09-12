@@ -129,6 +129,7 @@ class LocalItemListAdapterTest {
                             assertTrue(title.top < thumbnail.bottom)
                         } else {
                             assertTrue(title.top >= thumbnail.bottom)
+                            assertEquals(width - holder.itemView.paddingLeft - holder.itemView.paddingRight, thumbnail.width)
                             assertEquals(16.0 / 9.0, thumbnail.width.toDouble() / thumbnail.height, 0.05)
                         }
                         if (thumbnailWidth != 0) {
