@@ -20,8 +20,8 @@ public class LocalBookmarkPlaylistItemHolder extends LocalPlaylistItemHolder {
         this(infoItemBuilder, R.layout.list_playlist_bookmark_item, parent);
     }
 
-    LocalBookmarkPlaylistItemHolder(final LocalItemBuilder infoItemBuilder, final int layoutId,
-                                    final ViewGroup parent) {
+    public LocalBookmarkPlaylistItemHolder(final LocalItemBuilder infoItemBuilder,
+                                           final int layoutId, final ViewGroup parent) {
         super(infoItemBuilder, layoutId, parent);
         itemHandleView = itemView.findViewById(R.id.itemHandle);
     }

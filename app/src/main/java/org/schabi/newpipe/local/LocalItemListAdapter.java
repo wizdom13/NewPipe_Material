@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.info_list.ItemViewMode;
@@ -78,11 +79,15 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private static final int LOCAL_PLAYLIST_GRID_HOLDER_TYPE = 0x2001;
     private static final int LOCAL_PLAYLIST_CARD_HOLDER_TYPE = 0x2002;
     private static final int LOCAL_BOOKMARK_PLAYLIST_HOLDER_TYPE = 0x2003;
+    private static final int LOCAL_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE = 0x2004;
+    private static final int LOCAL_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE = 0x2005;
 
     private static final int REMOTE_PLAYLIST_HOLDER_TYPE = 0x3000;
     private static final int REMOTE_PLAYLIST_GRID_HOLDER_TYPE = 0x3001;
     private static final int REMOTE_PLAYLIST_CARD_HOLDER_TYPE = 0x3002;
     private static final int REMOTE_BOOKMARK_PLAYLIST_HOLDER_TYPE = 0x3003;
+    private static final int REMOTE_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE = 0x3004;
+    private static final int REMOTE_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE = 0x3005;
 
     private final LocalItemBuilder localItemBuilder;
     private final ArrayList<LocalItem> localItems;
@@ -94,6 +99,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private View footer = null;
     private ItemViewMode itemViewMode = ItemViewMode.LIST;
     private boolean useItemHandle = false;
+    private boolean itemHandleEnabled = true;
 
     public LocalItemListAdapter(final Context context) {
         recordManager = new HistoryRecordManager(context);
@@ -253,6 +259,11 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.useItemHandle = useItemHandle;
     }
 
+    /** Controls dragging without changing the bookmark row layout. Rebind after updating. */
+    public void setItemHandleEnabled(final boolean enabled) {
+        itemHandleEnabled = enabled;
+    }
+
     public void setHeaderSupplier(@Nullable final Supplier<View> headerSupplier) {
         final boolean changed = headerSupplier != this.headerSupplier;
         this.headerSupplier = headerSupplier;
@@ -339,7 +350,11 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         switch (item.getLocalItemType()) {
             case PLAYLIST_LOCAL_ITEM:
                 if (useItemHandle) {
-                    return LOCAL_BOOKMARK_PLAYLIST_HOLDER_TYPE;
+                    return switch (itemViewMode) {
+                        case CARD -> LOCAL_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE;
+                        case GRID -> LOCAL_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE;
+                        default -> LOCAL_BOOKMARK_PLAYLIST_HOLDER_TYPE;
+                    };
                 } else if (itemViewMode == ItemViewMode.CARD) {
                     return LOCAL_PLAYLIST_CARD_HOLDER_TYPE;
                 } else if (itemViewMode == ItemViewMode.GRID) {
@@ -349,7 +364,11 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                 }
             case PLAYLIST_REMOTE_ITEM:
                 if (useItemHandle) {
-                    return REMOTE_BOOKMARK_PLAYLIST_HOLDER_TYPE;
+                    return switch (itemViewMode) {
+                        case CARD -> REMOTE_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE;
+                        case GRID -> REMOTE_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE;
+                        default -> REMOTE_BOOKMARK_PLAYLIST_HOLDER_TYPE;
+                    };
                 } else if (itemViewMode == ItemViewMode.CARD) {
                     return REMOTE_PLAYLIST_CARD_HOLDER_TYPE;
                 } else if (itemViewMode == ItemViewMode.GRID) {
@@ -401,6 +420,12 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                 return new LocalPlaylistCardItemHolder(localItemBuilder, parent);
             case LOCAL_BOOKMARK_PLAYLIST_HOLDER_TYPE:
                 return new LocalBookmarkPlaylistItemHolder(localItemBuilder, parent);
+            case LOCAL_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE:
+                return new LocalBookmarkPlaylistItemHolder(localItemBuilder,
+                        R.layout.list_playlist_card_item, parent);
+            case LOCAL_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE:
+                return new LocalBookmarkPlaylistItemHolder(localItemBuilder,
+                        R.layout.list_playlist_grid_item, parent);
             case REMOTE_PLAYLIST_HOLDER_TYPE:
                 return new RemotePlaylistItemHolder(localItemBuilder, parent);
             case REMOTE_PLAYLIST_GRID_HOLDER_TYPE:
@@ -409,6 +434,12 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                 return new RemotePlaylistCardItemHolder(localItemBuilder, parent);
             case REMOTE_BOOKMARK_PLAYLIST_HOLDER_TYPE:
                 return new RemoteBookmarkPlaylistItemHolder(localItemBuilder, parent);
+            case REMOTE_BOOKMARK_PLAYLIST_CARD_HOLDER_TYPE:
+                return new RemoteBookmarkPlaylistItemHolder(localItemBuilder,
+                        R.layout.list_playlist_card_item, parent);
+            case REMOTE_BOOKMARK_PLAYLIST_GRID_HOLDER_TYPE:
+                return new RemoteBookmarkPlaylistItemHolder(localItemBuilder,
+                        R.layout.list_playlist_grid_item, parent);
             case STREAM_PLAYLIST_HOLDER_TYPE:
                 return new LocalPlaylistStreamItemHolder(localItemBuilder, parent);
             case STREAM_PLAYLIST_GRID_HOLDER_TYPE:
@@ -444,6 +475,12 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             ((LocalItemHolder) holder)
                     .updateFromItem(localItems.get(position), recordManager, dateTimeFormatter);
+            if (holder instanceof LocalBookmarkPlaylistItemHolder
+                    || holder instanceof RemoteBookmarkPlaylistItemHolder) {
+                final View handle = holder.itemView.findViewById(R.id.itemHandle);
+                handle.setEnabled(itemHandleEnabled);
+                handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
+            }
         } else if (holder instanceof HeaderFooterHolder && position == 0 && hasHeader()) {
             ((HeaderFooterHolder) holder).view = headerSupplier.get();
         } else if (holder instanceof HeaderFooterHolder && position == sizeConsideringHeader()
