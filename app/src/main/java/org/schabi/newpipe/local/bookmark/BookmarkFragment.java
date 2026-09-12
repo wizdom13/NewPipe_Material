@@ -17,10 +17,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.evernote.android.state.State;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -78,6 +81,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private List<Pair<Long, LocalItem.LocalItemType>> deletedItems;
     private List<PlaylistLocalItem> completePlaylists = Collections.emptyList();
     private String contextualSearchQuery = "";
+    private PlaylistCategories categories = new PlaylistCategories();
+    @State
+    public String selectedCategory = PlaylistCategories.ALL;
 
     ///////////////////////////////////////////////////////////////////////////
     // Fragment LifeCycle - Creation
@@ -98,6 +104,13 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         debounceSaver = new DebounceSaver(3000, this);
 
         deletedItems = new ArrayList<>();
+        try {
+            categories = PlaylistCategories.fromJson(PreferenceManager
+                    .getDefaultSharedPreferences(requireContext())
+                    .getString(PlaylistCategories.PREFERENCE_KEY, ""));
+        } catch (final com.grack.nanojson.JsonParserException error) {
+            Log.e("BookmarkFragment", "Could not read playlist categories", error);
+        }
     }
 
     @Nullable
@@ -127,8 +140,18 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
+        if (!PlaylistCategories.ALL.equals(selectedCategory)
+                && !PlaylistCategories.UNCATEGORIZED.equals(selectedCategory)
+                && categories.name(selectedCategory) == null) {
+            selectedCategory = PlaylistCategories.ALL;
+        }
+        rootView.findViewById(R.id.playlist_category_filter)
+                .setOnClickListener(view -> chooseCategory(null));
+        rootView.findViewById(R.id.playlist_category_manage)
+                .setOnClickListener(view -> manageCategories());
+        updateCategoryLabel();
 
-        itemListAdapter.setUseItemHandle(!isContextualSearchActive());
+        itemListAdapter.setUseItemHandle(!isPlaylistListFiltered());
     }
 
     @Override
@@ -173,7 +196,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             @Override
             public void drag(final LocalItem selectedItem,
                              final RecyclerView.ViewHolder viewHolder) {
-                if (!isContextualSearchActive() && itemTouchHelper != null) {
+                if (!isPlaylistListFiltered() && itemTouchHelper != null) {
                     itemTouchHelper.startDrag(viewHolder);
                 }
             }
@@ -302,12 +325,15 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         }
 
         itemListAdapter.clearStreamItemList();
-        itemListAdapter.setUseItemHandle(!isContextualSearchActive());
-        setEmptyStateMessage(isContextualSearchActive()
+        itemListAdapter.setUseItemHandle(!isPlaylistListFiltered());
+        setEmptyStateMessage(isPlaylistListFiltered()
                 ? R.string.search_no_results : R.string.empty_list_subtitle);
 
         final List<PlaylistLocalItem> filteredPlaylists = ContextualSearchHelper.filter(
-                completePlaylists,
+                completePlaylists.stream()
+                        .filter(playlist -> categories.matches(categoryKey(playlist),
+                                selectedCategory))
+                        .collect(java.util.stream.Collectors.toList()),
                 contextualSearchQuery,
                 playlist -> new String[]{playlist.getOrderingName()});
 
@@ -327,7 +353,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     @Override
     public void setContextualSearchQuery(@NonNull final String query) {
         final String normalizedQuery = ContextualSearchHelper.normalizeQuery(query);
-        if (!isContextualSearchActive() && ContextualSearchHelper.isActive(normalizedQuery)) {
+        if (!isPlaylistListFiltered() && ContextualSearchHelper.isActive(normalizedQuery)) {
             captureCanonicalOrderFromAdapter();
             saveImmediate();
         }
@@ -340,7 +366,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private void captureCanonicalOrderFromAdapter() {
-        if (itemListAdapter == null) {
+        if (itemListAdapter == null || isPlaylistListFiltered()) {
             return;
         }
         final List<PlaylistLocalItem> displayedOrder = new ArrayList<>();
@@ -397,6 +423,15 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             return;
         }
 
+        if (isPlaylistListFiltered()) {
+            disposables.add(localPlaylistManager.updatePlaylists(Collections.emptyList(),
+                            Collections.singletonList(item.getUid()))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> { }, throwable -> showError(new ErrorInfo(throwable,
+                            UserAction.REQUESTED_BOOKMARK, "Deleting categorized playlist"))));
+            return;
+        }
+
         itemListAdapter.removeItem(item);
 
         if (item instanceof PlaylistMetadataEntry) {
@@ -434,7 +469,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
     @Override
     public void saveImmediate() {
-        if (itemListAdapter == null || isContextualSearchActive()) {
+        if (itemListAdapter == null || isPlaylistListFiltered()) {
             return;
         }
 
@@ -519,7 +554,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                                   @NonNull final RecyclerView.ViewHolder target) {
 
                 // Allow swap LocalBookmarkPlaylistItemHolder and RemoteBookmarkPlaylistItemHolder.
-                if (isContextualSearchActive() || itemListAdapter == null
+                if (isPlaylistListFiltered() || itemListAdapter == null
                         || source.getItemViewType() != target.getItemViewType()
                         && !(
                         (
@@ -566,19 +601,29 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     ///////////////////////////////////////////////////////////////////////////
 
     private void showRemoteDeleteDialog(final PlaylistRemoteEntity item) {
-        showDeleteDialog(item.getOrderingName(), item);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setItems(new String[]{getString(R.string.playlist_move_to_category),
+                    getString(R.string.delete)}, (dialog, which) -> {
+                    if (which == 0) {
+                        chooseCategory(item);
+                    } else {
+                        showDeleteDialog(item.getOrderingName(), item);
+                    }
+                }).show();
     }
 
     private void showLocalDialog(final PlaylistMetadataEntry selectedItem) {
         final String rename = getString(R.string.rename);
         final String delete = getString(R.string.delete);
         final String unsetThumbnail = getString(R.string.unset_playlist_thumbnail);
+        final String moveToCategory = getString(R.string.playlist_move_to_category);
         final boolean isThumbnailPermanent = localPlaylistManager
                 .getIsPlaylistThumbnailPermanent(selectedItem.getUid());
 
         final ArrayList<String> items = new ArrayList<>();
         items.add(rename);
         items.add(delete);
+        items.add(moveToCategory);
         if (isThumbnailPermanent) {
             items.add(unsetThumbnail);
         }
@@ -588,6 +633,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 showRenameDialog(selectedItem);
             } else if (items.get(index).equals(delete)) {
                 showDeleteDialog(selectedItem.getOrderingName(), selectedItem);
+            } else if (items.get(index).equals(moveToCategory)) {
+                chooseCategory(selectedItem);
             } else if (isThumbnailPermanent && items.get(index).equals(unsetThumbnail)) {
                 final long thumbnailStreamId = localPlaylistManager
                         .getAutomaticPlaylistThumbnailStreamId(selectedItem.getUid());
@@ -601,6 +648,155 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         new AlertDialog.Builder(activity)
                 .setItems(items.toArray(new String[0]), action)
                 .show();
+    }
+
+    private boolean isPlaylistListFiltered() {
+        return !PlaylistCategories.allowsReordering(isContextualSearchActive(), selectedCategory);
+    }
+
+    private static String categoryKey(final PlaylistLocalItem playlist) {
+        if (playlist instanceof PlaylistRemoteEntity) {
+            final PlaylistRemoteEntity remote = (PlaylistRemoteEntity) playlist;
+            return "remote:" + remote.getServiceId() + ":" + remote.getUrl();
+        }
+        return "local:" + playlist.getUid();
+    }
+
+    private void updateCategoryLabel() {
+        if (getView() == null) {
+            return;
+        }
+        final MaterialButton button = getView().findViewById(R.id.playlist_category_filter);
+        button.setText(PlaylistCategories.ALL.equals(selectedCategory)
+                ? getString(R.string.playlist_categories_all)
+                : PlaylistCategories.UNCATEGORIZED.equals(selectedCategory)
+                ? getString(R.string.playlist_uncategorized) : categories.name(selectedCategory));
+    }
+
+    private void setCategoryFilter(final String id) {
+        if (!isPlaylistListFiltered()) {
+            captureCanonicalOrderFromAdapter();
+            saveImmediate();
+        }
+        selectedCategory = id;
+        updateCategoryLabel();
+        showFilteredPlaylists();
+    }
+
+    private void saveCategories() {
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
+                .putString(PlaylistCategories.PREFERENCE_KEY, categories.toJson()).apply();
+        updateCategoryLabel();
+        showFilteredPlaylists();
+    }
+
+    private void chooseCategory(@Nullable final PlaylistLocalItem playlist) {
+        if (!isPlaylistListFiltered()) {
+            captureCanonicalOrderFromAdapter();
+            saveImmediate();
+        }
+        final List<String> ids = new ArrayList<>();
+        final List<String> labels = new ArrayList<>();
+        if (playlist == null) {
+            ids.add(PlaylistCategories.ALL);
+            labels.add(getString(R.string.playlist_categories_all));
+        }
+        ids.add(PlaylistCategories.UNCATEGORIZED);
+        labels.add(getString(R.string.playlist_uncategorized));
+        for (final String id : categories.ids()) {
+            ids.add(id);
+            labels.add(categories.name(id));
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.playlist_categories)
+                .setItems(labels.toArray(new String[0]), (dialog, which) -> {
+                    if (playlist == null) {
+                        setCategoryFilter(ids.get(which));
+                    } else {
+                        categories.assign(categoryKey(playlist), ids.get(which));
+                        saveCategories();
+                    }
+                })
+                .setPositiveButton(R.string.playlist_category_create,
+                        (dialog, which) -> editCategory(null, playlist))
+                .setNegativeButton(R.string.cancel, null).show();
+    }
+
+    private void manageCategories() {
+        if (!isPlaylistListFiltered()) {
+            captureCanonicalOrderFromAdapter();
+            saveImmediate();
+        }
+        final List<String> ids = categories.ids();
+        final String[] names = ids.stream().map(categories::name).toArray(String[]::new);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.playlist_categories)
+                .setItems(names, (dialog, which) -> {
+                    final String id = ids.get(which);
+                    new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(categories.name(id))
+                            .setItems(new String[]{getString(R.string.rename),
+                                getString(R.string.delete)}, (actionDialog, action) -> {
+                                if (action == 0) {
+                                    editCategory(id, null);
+                                } else {
+                                    deleteCategory(id);
+                                }
+                            }).show();
+                })
+                .setPositiveButton(R.string.playlist_category_create,
+                        (dialog, which) -> editCategory(null, null))
+                .setNegativeButton(R.string.cancel, null).show();
+    }
+
+    private void editCategory(@Nullable final String id,
+                              @Nullable final PlaylistLocalItem playlist) {
+        final DialogEditTextBinding input = DialogEditTextBinding.inflate(getLayoutInflater());
+        input.dialogEditText.setHint(R.string.name);
+        input.dialogEditText.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        if (id != null) {
+            input.dialogEditText.setText(categories.name(id));
+        }
+        final AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(id == null ? R.string.playlist_category_create : R.string.rename)
+                .setView(input.getRoot())
+                .setPositiveButton(R.string.ok, null)
+                .setNegativeButton(R.string.cancel, null).create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+                .setOnClickListener(view -> {
+                    try {
+                        final String name = input.dialogEditText.getText().toString();
+                        if (id == null) {
+                            final String created = categories.create(name);
+                            if (playlist != null) {
+                                categories.assign(categoryKey(playlist), created);
+                            }
+                        } else {
+                            categories.rename(id, name);
+                        }
+                        saveCategories();
+                        dialog.dismiss();
+                    } catch (final IllegalArgumentException error) {
+                        input.dialogEditText.setError(
+                                getString(R.string.playlist_category_name_error));
+                    }
+                }));
+        dialog.show();
+    }
+
+    private void deleteCategory(final String id) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(categories.name(id))
+                .setMessage(R.string.playlist_category_delete_message)
+                .setPositiveButton(R.string.delete, (dialog, which) -> {
+                    categories.delete(id);
+                    if (id.equals(selectedCategory)) {
+                        selectedCategory = PlaylistCategories.ALL;
+                    }
+                    saveCategories();
+                })
+                .setNegativeButton(R.string.cancel, null).show();
     }
 
     private void showRenameDialog(final PlaylistMetadataEntry selectedItem) {

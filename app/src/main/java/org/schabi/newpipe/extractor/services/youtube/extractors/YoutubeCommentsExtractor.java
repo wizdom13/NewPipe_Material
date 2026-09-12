@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.comments.CommentsExtractor;
+import org.schabi.newpipe.extractor.comments.CommentSortOrder;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItemsCollector;
 import org.schabi.newpipe.extractor.downloader.Downloader;
@@ -38,6 +39,17 @@ public class YoutubeCommentsExtractor extends CommentsExtractor {
      * Whether comments are disabled on video.
      */
     private boolean commentsDisabled;
+    private CommentSortOrder sortOrder = CommentSortOrder.TOP;
+
+    @Override
+    public void setSortOrder(final CommentSortOrder order) {
+        sortOrder = java.util.Objects.requireNonNull(order);
+    }
+
+    @Override
+    public CommentSortOrder getSortOrder() {
+        return sortOrder;
+    }
 
     /**
      * The second ajax <b>/next</b> response.
@@ -60,6 +72,10 @@ public class YoutubeCommentsExtractor extends CommentsExtractor {
             return getInfoItemsPageForDisabledComments();
         }
 
+        if (sortOrder == CommentSortOrder.NEWEST) {
+            return getPage(new Page(getUrl(),
+                    YoutubeCommentSort.continuation(ajaxJson, sortOrder)));
+        }
         return extractComments(ajaxJson, ajaxJsonSafe);
     }
 

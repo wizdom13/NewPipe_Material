@@ -14,6 +14,16 @@ public abstract class CommentsExtractor extends ListExtractor<CommentsInfoItem> 
         super(service, uiHandler);
     }
 
+    public void setSortOrder(final CommentSortOrder order) {
+        if (order != CommentSortOrder.TOP) {
+            throw new UnsupportedOperationException("Comment sorting is unavailable");
+        }
+    }
+
+    public CommentSortOrder getSortOrder() {
+        return CommentSortOrder.TOP;
+    }
+
     /**
      * @apiNote Warning: This method is experimental and may get removed in a future release.
      * @return <code>true</code> if the comments are disabled otherwise <code>false</code> (default)

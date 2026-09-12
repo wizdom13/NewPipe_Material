@@ -131,6 +131,11 @@ open class App :
 
         configureRxJavaErrorHandler()
         initializeDeviceSyncScheduling()
+        runCatching {
+            org.schabi.newpipe.settings.export.ScheduledBackupWorker.schedule(this)
+        }.onFailure { error ->
+            Log.e(TAG, "Could not initialize automatic backups", error)
+        }
         initializeDeviceSyncListener()
     }
 

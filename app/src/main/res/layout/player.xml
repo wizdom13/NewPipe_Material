@@ -437,6 +437,17 @@
                             app:tint="@color/white" />
 
                         <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/touchLockButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/player_touch_lock"
+                            android:padding="@dimen/player_main_icon_buttons_padding"
+                            android:src="@drawable/ic_touch_lock"
+                            android:visibility="gone"
+                            app:tint="@color/white" />
+
+                        <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/listenModeButton"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
@@ -991,4 +1002,19 @@
         android:alpha="0"
         android:visibility="invisible" /> <!-- Required for the first appearance fading correctly -->
 
+    <org.schabi.newpipe.views.TouchLockOverlay
+        android:id="@+id/touchLockOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/touchUnlockButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:layout_margin="32dp"
+            android:minHeight="48dp"
+            android:text="@string/player_touch_unlock"
+            app:icon="@drawable/ic_touch_lock" />
+    </org.schabi.newpipe.views.TouchLockOverlay>
 </RelativeLayout>

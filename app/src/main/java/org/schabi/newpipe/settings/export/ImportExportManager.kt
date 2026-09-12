@@ -70,13 +70,18 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
      * It also creates the file.
      */
     @Throws(Exception::class)
-    fun exportDatabase(preferences: SharedPreferences, file: StoredFileHelper) {
+    @JvmOverloads
+    fun exportDatabase(
+        preferences: SharedPreferences,
+        file: StoredFileHelper,
+        database: Path = fileLocator.db
+    ) {
         // truncate the file before writing to it, otherwise if the new content is smaller than the
         // previous file size, the file will retain part of the previous content and be corrupted
         ZipOutputStream(SharpOutputStream(file.openAndTruncateStream()).buffered()).use { outZip ->
             // add the database
             val name = BackupFileLocator.FILE_NAME_DB
-            ZipHelper.addFileToZip(outZip, name, fileLocator.db)
+            ZipHelper.addFileToZip(outZip, name, database)
 
             // add the JSON preferences; legacy serialized preferences are still supported when
             // importing old backups, but new backups avoid writing that vulnerable format.

@@ -1,0 +1,76 @@
+package org.schabi.newpipe.player;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import android.content.Context;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.schabi.newpipe.views.TouchLockOverlay;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+@RunWith(AndroidJUnit4.class)
+public class TouchLockOverlayTest {
+    @Test
+    public void blocksPlaybackTouchesButKeepsUnlockReachable() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            final Context context = ApplicationProvider.getApplicationContext();
+            final FrameLayout root = new FrameLayout(context);
+            final AtomicInteger playbackTouches = new AtomicInteger();
+            final View playback = new View(context);
+            playback.setOnTouchListener((view, event) -> {
+                playbackTouches.incrementAndGet();
+                return true;
+            });
+            root.addView(playback, new FrameLayout.LayoutParams(400, 400));
+            final TouchLockOverlay overlay = new TouchLockOverlay(context, null);
+            final Button unlock = new Button(context);
+            final AtomicInteger unlockTouches = new AtomicInteger();
+            unlock.setText("Unlock");
+            unlock.setOnTouchListener((view, event) -> {
+                unlockTouches.incrementAndGet();
+                return false;
+            });
+            unlock.setOnClickListener(view -> overlay.setVisibility(View.GONE));
+            overlay.addView(unlock, new FrameLayout.LayoutParams(100, 100,
+                    Gravity.RIGHT | Gravity.BOTTOM));
+            root.addView(overlay, new FrameLayout.LayoutParams(400, 400));
+            final int exact = View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY);
+            root.measure(exact, exact);
+            root.layout(0, 0, 400, 400);
+
+            tap(root, 50, 50);
+            assertEquals(0, playbackTouches.get());
+            tap(root, 350, 350);
+            assertTrue(unlockTouches.get() > 0);
+            // Unattached views queue performClick until attachment; execute that callback here.
+            unlock.performClick();
+            assertEquals(View.GONE, overlay.getVisibility());
+            tap(root, 50, 50);
+            assertTrue(playbackTouches.get() > 0);
+        });
+    }
+
+    private static void tap(final View root, final float x, final float y) {
+        final MotionEvent down = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, x, y, 0);
+        final MotionEvent up = MotionEvent.obtain(0, 20, MotionEvent.ACTION_UP, x, y, 0);
+        try {
+            root.dispatchTouchEvent(down);
+            root.dispatchTouchEvent(up);
+        } finally {
+            down.recycle();
+            up.recycle();
+        }
+    }
+}

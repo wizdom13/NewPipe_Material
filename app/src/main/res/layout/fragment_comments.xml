@@ -1,11 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/comment_sort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
+        <com.google.android.material.chip.Chip
+            android:id="@+id/comments_top"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/comments_sort_top" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/comments_newest"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/comments_sort_newest" />
+    </com.google.android.material.chip.ChipGroup>
+
     <org.schabi.newpipe.views.NewPipeRecyclerView
         android:id="@+id/items_list"
+        android:layout_below="@id/comment_sort"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical"

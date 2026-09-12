@@ -196,6 +196,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Block individual videos or channels from their context menus, and hide content by title or uploader
   keywords using locally stored rules under **Settings > Content > Blocked content**
 - Browse video details, related content, comments, playlists, and channel tabs where supported
+- Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
 - Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
 - Browse read-only YouTube channel posts with text, images, polls, links, videos, playlists, and
   pagination
@@ -219,6 +220,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   audio > Visualizer style**
 - Tune playback with a built-in 10-band equalizer, five presets, a saved custom curve, and automatic
   clipping headroom
+- Enable adaptive **Loudness normalization** and **Dynamic range compression** in **Settings > Video
+  and audio**; both are off by default and apply to decoded audio in the built-in player
 - Browse and resume audio safely through Android Auto, including voice search and a bounded
   **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
@@ -237,6 +240,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Use swipe seeking, fullscreen volume and brightness swipes, hold-to-speed-up, configurable
   pinch-to-zoom and two-finger panning, an optional two-finger playback-speed gesture, and swipe down
   to the miniplayer
+- Lock fullscreen touch controls from the player's expanded controls; use **Unlock** or leave
+  fullscreen to restore touch interaction
 - Optionally keep visible video playback in Android's native picture-in-picture window on Android 8
   and newer
 - Optionally keep the video visible while scrolling its details page
@@ -258,6 +263,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Create, rename, search, play, shuffle, share, and bulk-manage local playlists; remove watched or
   duplicate entries, bookmark remote playlists, and sort remote playlist contents
 - Swipe a video out of a local playlist with an **Undo** action
+- Organize local and bookmarked online playlists into **Categories**, with rename, move, and delete
+  actions; categories are local to the device and included in complete WizeStream backups
+- Long-press a video in search, channel lists, or feeds and choose **Select** to enqueue, add to a
+  playlist, or download several items; **Select all loaded videos** affects the currently loaded list
 - Browse and play local audio and video files with search, filters, sorting, thumbnails, detailed
   metadata, refresh/rescan controls, and main, background, or popup playback
 - Search locally within subscriptions, playlists, feeds, watch history, and Downloads, then carry a
@@ -274,6 +283,9 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Import or export subscriptions separately, create complete WizeStream backups, and merge compatible
   watch history, playback positions, local playlists, settings, and SponsorBlock data from NewPipe-style
   backups without replacing existing data
+- Schedule daily or weekly backups in **Settings > Backup and restore** after choosing a folder;
+  retain the latest seven automatic backups and see the last backup status. Android determines the
+  exact run time based on battery and storage conditions
 
 ### Learning Mode
 

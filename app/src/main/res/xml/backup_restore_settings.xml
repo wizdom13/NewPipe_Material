@@ -37,6 +37,28 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <PreferenceCategory
+        android:title="@string/automatic_backup_title"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:key="@string/automatic_backup_directory_key"
+            android:title="@string/automatic_backup_folder"
+            app:iconSpaceReserved="false" />
+        <ListPreference
+            android:key="@string/automatic_backup_interval_key"
+            android:title="@string/automatic_backup_frequency"
+            android:defaultValue="off"
+            android:entries="@array/automatic_backup_intervals"
+            android:entryValues="@array/automatic_backup_interval_values"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="@string/automatic_backup_status_key"
+            android:title="@string/automatic_backup_retention"
+            app:selectable="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
     <Preference
         android:key="@string/reset_settings"
         android:title="@string/reset_settings_title"

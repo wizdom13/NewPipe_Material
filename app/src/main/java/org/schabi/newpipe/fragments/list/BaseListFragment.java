@@ -27,6 +27,8 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
 import org.schabi.newpipe.info_list.InfoListAdapter;
+import org.schabi.newpipe.info_list.StreamSelectionController;
+import org.schabi.newpipe.info_list.dialog.StreamDialogEntry;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
@@ -264,6 +266,12 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     @Override
     protected void initListeners() {
         super.initListeners();
+        streamSelection = new StreamSelectionController(this, itemsList,
+                () -> infoListAdapter.getItemsList().stream()
+                        .filter(StreamInfoItem.class::isInstance)
+                        .map(StreamInfoItem.class::cast)
+                        .collect(java.util.stream.Collectors.toList()),
+                infoListAdapter::getStreamAtPosition);
         infoListAdapter.setOnStreamSelectedListener(new OnClickGesture<>() {
             @Override
             public void selected(final StreamInfoItem selectedItem) {
@@ -272,7 +280,9 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
             @Override
             public void held(final StreamInfoItem selectedItem) {
-                showInfoItemDialog(selectedItem);
+                if (!streamSelection.toggleIfActive(selectedItem)) {
+                    showInfoItemDialog(selectedItem);
+                }
             }
         });
 
@@ -404,6 +414,9 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     }
 
     private void onStreamSelected(final StreamInfoItem selectedItem) {
+        if (streamSelection.toggleIfActive(selectedItem)) {
+            return;
+        }
         onItemSelected(selectedItem);
         if (shouldPlayOnBackground(selectedItem)) {
             NavigationHelper.playOnBackgroundPlayer(requireContext(),
@@ -428,7 +441,10 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
     protected void showInfoItemDialog(final StreamInfoItem item) {
         try {
-            new InfoItemDialog.Builder(getActivity(), getContext(), this, item).create().show();
+            new InfoItemDialog.Builder(getActivity(), getContext(), this, item)
+                    .addEntry(new StreamDialogEntry(R.string.stream_select,
+                            (fragment, selected) -> streamSelection.start(selected)))
+                    .create().show();
         } catch (final IllegalArgumentException e) {
             InfoItemDialog.Builder.reportErrorDuringInitialization(e, item);
         }
@@ -459,8 +475,22 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
     @Override
     protected void startLoading(final boolean forceLoad) {
+        if (streamSelection != null) {
+            streamSelection.finish();
+        }
         useInitialItemListLoadScrollListener();
         super.startLoading(forceLoad);
+    }
+
+    private StreamSelectionController streamSelection;
+
+    @Override
+    public void onDestroyView() {
+        if (streamSelection != null) {
+            streamSelection.destroy();
+            streamSelection = null;
+        }
+        super.onDestroyView();
     }
 
     protected abstract void loadMoreItems();

@@ -256,6 +256,16 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return infoItemList;
     }
 
+    @Nullable
+    public StreamInfoItem getStreamAtPosition(final int position) {
+        final int index = position - (hasHeader() ? 1 : 0);
+        if (index < 0 || index >= infoItemList.size()) {
+            return null;
+        }
+        final InfoItem item = infoItemList.get(index);
+        return item instanceof StreamInfoItem ? (StreamInfoItem) item : null;
+    }
+
     @Override
     public int getItemCount() {
         int count = infoItemList.size();

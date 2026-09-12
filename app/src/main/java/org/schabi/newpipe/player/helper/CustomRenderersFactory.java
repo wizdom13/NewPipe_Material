@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.Nullable;
+import androidx.preference.PreferenceManager;
 
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.Renderer;
@@ -17,6 +18,7 @@ import androidx.media3.exoplayer.text.TextRenderer;
 import androidx.media3.exoplayer.video.VideoRendererEventListener;
 
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor;
+import org.schabi.newpipe.player.equalizer.AudioDynamicsProcessor;
 
 import java.util.ArrayList;
 
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 public final class CustomRenderersFactory extends DefaultRenderersFactory {
     private final boolean useCustomVideoRenderer;
     private final VisualizerAudioProcessor visualizerAudioProcessor;
+    private final AudioDynamicsProcessor audioDynamicsProcessor;
 
     public CustomRenderersFactory(final Context context) {
         this(context, true, new VisualizerAudioProcessor());
@@ -51,6 +54,11 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
         super(context);
         this.useCustomVideoRenderer = useCustomVideoRenderer;
         this.visualizerAudioProcessor = visualizerAudioProcessor;
+        final android.content.SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        audioDynamicsProcessor = new AudioDynamicsProcessor(
+                () -> preferences.getBoolean(AudioDynamicsProcessor.NORMALIZATION_KEY, false),
+                () -> preferences.getBoolean(AudioDynamicsProcessor.COMPRESSION_KEY, false));
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -102,9 +110,11 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
                                        final boolean enableFloatOutput,
                                        final boolean enableAudioOutputPlaybackParams) {
         return new DefaultAudioSink.Builder(context)
-                .setEnableFloatOutput(enableFloatOutput)
+                // Custom processors use the PCM16 path, including live preference changes.
+                .setEnableFloatOutput(false)
                 .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-                .setAudioProcessors(new AudioProcessor[] {visualizerAudioProcessor})
+                .setAudioProcessors(new AudioProcessor[] {
+                    audioDynamicsProcessor, visualizerAudioProcessor})
                 .build();
     }
 }

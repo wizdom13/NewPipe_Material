@@ -15,6 +15,9 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
+import org.schabi.newpipe.extractor.comments.CommentSortOrder;
+import org.schabi.newpipe.extractor.ServiceList;
+import com.google.android.material.chip.ChipGroup;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
@@ -29,6 +32,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     private TextView emptyStateDesc;
+    private CommentSortOrder sortOrder = CommentSortOrder.TOP;
 
     public static CommentsFragment getInstance(final int serviceId, final String url,
                                                final String name) {
@@ -52,6 +56,24 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
         super.initViews(rootView, savedInstanceState);
 
         emptyStateDesc = rootView.findViewById(R.id.empty_state_desc);
+        if (savedInstanceState != null) {
+            sortOrder = savedInstanceState.getBoolean("comments_newest", false)
+                    ? CommentSortOrder.NEWEST : CommentSortOrder.TOP;
+        }
+        final ChipGroup sorting = rootView.findViewById(R.id.comment_sort);
+        sorting.setVisibility(serviceId == ServiceList.YouTube.getServiceId()
+                ? View.VISIBLE : View.GONE);
+        sorting.check(sortOrder == CommentSortOrder.NEWEST
+                ? R.id.comments_newest : R.id.comments_top);
+        sorting.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            final CommentSortOrder selected = checkedIds.contains(R.id.comments_newest)
+                    ? CommentSortOrder.NEWEST : CommentSortOrder.TOP;
+            if (sortOrder != selected) {
+                sortOrder = selected;
+                currentNextPage = null;
+                startLoading(true);
+            }
+        });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -71,6 +93,12 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
         disposables.clear();
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putBoolean("comments_newest", sortOrder == CommentSortOrder.NEWEST);
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
     // Load and handle
     //////////////////////////////////////////////////////////////////////////*/
@@ -82,7 +110,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
 
     @Override
     protected Single<CommentsInfo> loadResult(final boolean forceLoad) {
-        return ExtractorHelper.getCommentsInfo(serviceId, url, forceLoad);
+        return ExtractorHelper.getCommentsInfo(serviceId, url, forceLoad, sortOrder);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
