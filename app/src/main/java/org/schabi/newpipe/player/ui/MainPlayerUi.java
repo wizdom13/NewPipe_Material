@@ -126,7 +126,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         @NonNull final PlayerBinding playerBinding) {
         super(player, playerBinding);
         binding.touchLockButton.setOnClickListener(view -> setTouchLocked(true));
-        binding.touchUnlockButton.setOnClickListener(view -> setTouchLocked(false));
+        binding.touchUnlockButton.setOnClickListener(view -> {
+            setTouchLocked(false);
+            showControlsThenHide();
+        });
     }
 
     /**

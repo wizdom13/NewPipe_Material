@@ -21,7 +21,8 @@ public final class DatabaseSnapshot {
             try {
                 final List<String> tables = new ArrayList<>();
                 try (Cursor schema = source.query("SELECT name, sql FROM sqlite_master"
-                        + " WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")) {
+                        + " WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+                        + " AND name != 'android_metadata'")) {
                     while (schema.moveToNext()) {
                         target.execSQL(schema.getString(1));
                         tables.add(schema.getString(0));
