@@ -1,0 +1,7 @@
+• Added scheduled backups and NewPipe-compatible export.
+• Added fullscreen touch lock and optional loudness normalization/compression.
+• Added multi-select in search, channels and feeds.
+• Added playlist categories and YouTube comment sorting.
+• Bookmarks now follow List/Card/Grid settings and the app theme.
+• Improved YouTube live recovery and Shorts auto-queue.
+• Fixed landscape queue crashes, phone fullscreen detection and copy-toast colors.
