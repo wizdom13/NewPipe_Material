@@ -122,7 +122,7 @@ public final class ScheduledBackupWorker extends Worker {
         }
     }
 
-    private static void pruneBackups(final DocumentFile directory) {
+    static void pruneBackups(final DocumentFile directory) {
         try {
             final DocumentFile[] backups = Arrays.stream(directory.listFiles())
                     .filter(file -> file.isFile() && isManagedBackup(file.getName()))

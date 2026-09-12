@@ -7,6 +7,7 @@ import com.grack.nanojson.JsonArray
 import com.grack.nanojson.JsonParser
 import java.io.InputStream
 import org.schabi.newpipe.R
+import org.schabi.newpipe.local.bookmark.PlaylistCategories
 
 /**
  * Applies the canonical WizeStream default SharedPreferences snapshot.
@@ -53,6 +54,8 @@ object WizeStreamDefaultPreferences {
         clearFirst: Boolean = false
     ) {
         val jsonObject = JsonParser.`object`().from(input)
+        // Categories describe the library, so resetting playback/UI settings must retain them.
+        val categories = preferences.getString(PlaylistCategories.PREFERENCE_KEY, null)
         val editor = preferences.edit()
         if (clearFirst) {
             editor.clear()
@@ -60,6 +63,9 @@ object WizeStreamDefaultPreferences {
 
         for ((key, value) in jsonObject) {
             putValue(editor, key, value)
+        }
+        if (clearFirst && categories != null) {
+            editor.putString(PlaylistCategories.PREFERENCE_KEY, categories)
         }
         editor.putBoolean(DEFAULTS_APPLIED_KEY, true)
 

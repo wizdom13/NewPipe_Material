@@ -21,6 +21,10 @@ public final class PlaylistCategories {
     private final Map<String, String> names = new LinkedHashMap<>();
     private final Map<String, String> memberships = new LinkedHashMap<>();
 
+    public static boolean allowsReordering(final boolean searchActive, final String categoryId) {
+        return !searchActive && ALL.equals(categoryId);
+    }
+
     public static PlaylistCategories fromJson(final String json) throws JsonParserException {
         final PlaylistCategories result = new PlaylistCategories();
         if (json == null || json.isEmpty()) {

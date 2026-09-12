@@ -651,7 +651,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private boolean isPlaylistListFiltered() {
-        return isContextualSearchActive() || !PlaylistCategories.ALL.equals(selectedCategory);
+        return !PlaylistCategories.allowsReordering(isContextualSearchActive(), selectedCategory);
     }
 
     private static String categoryKey(final PlaylistLocalItem playlist) {

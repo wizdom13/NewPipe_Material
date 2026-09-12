@@ -80,6 +80,14 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private SubscriptionsImportExportHelper importExportHelper;
     private NewPipeDataMigrationManager migrationManager;
     private NewPipeCompatibleExportManager compatibleExportManager;
+    private final SharedPreferences.OnSharedPreferenceChangeListener backupStatusListener =
+            (preferences, key) -> {
+                if (isAdded() && getView() != null
+                        && (ScheduledBackupWorker.LAST_SUCCESS_KEY.equals(key)
+                        || ScheduledBackupWorker.FAILED_KEY.equals(key))) {
+                    updateAutomaticBackupSummary();
+                }
+            };
     private final ActivityResultLauncher<Uri> requestBackupDirectory =
             registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
                 if (uri == null) {
@@ -117,7 +125,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         addPreferencesFromResourceRegistry();
         requirePreference(R.string.automatic_backup_directory_key)
                 .setOnPreferenceClickListener(preference -> {
-                    requestBackupDirectory.launch(null);
+                    NoFileManagerSafeGuard.launchSafe(requestBackupDirectory,
+                            null, TAG, requireContext());
                     return true;
                 });
         requirePreference(R.string.automatic_backup_interval_key)
@@ -126,7 +135,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                             ScheduledBackupWorker.DIRECTORY_KEY, "").isEmpty()) {
                         Toast.makeText(requireContext(), R.string.automatic_backup_choose_folder,
                                 Toast.LENGTH_LONG).show();
-                        requestBackupDirectory.launch(null);
+                        NoFileManagerSafeGuard.launchSafe(requestBackupDirectory,
+                                null, TAG, requireContext());
                         return false;
                     }
                     defaultPreferences.edit().putString(ScheduledBackupWorker.INTERVAL_KEY,
@@ -232,7 +242,14 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     @Override
     public void onResume() {
         super.onResume();
+        defaultPreferences.registerOnSharedPreferenceChangeListener(backupStatusListener);
         updateAutomaticBackupSummary();
+    }
+
+    @Override
+    public void onPause() {
+        defaultPreferences.unregisterOnSharedPreferenceChangeListener(backupStatusListener);
+        super.onPause();
     }
 
     private void updateAutomaticBackupSummary() {

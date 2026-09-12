@@ -36,7 +36,12 @@ public class TouchLockOverlayTest {
             root.addView(playback, new FrameLayout.LayoutParams(400, 400));
             final TouchLockOverlay overlay = new TouchLockOverlay(context, null);
             final Button unlock = new Button(context);
+            final AtomicInteger unlockTouches = new AtomicInteger();
             unlock.setText("Unlock");
+            unlock.setOnTouchListener((view, event) -> {
+                unlockTouches.incrementAndGet();
+                return false;
+            });
             unlock.setOnClickListener(view -> overlay.setVisibility(View.GONE));
             overlay.addView(unlock, new FrameLayout.LayoutParams(100, 100,
                     Gravity.RIGHT | Gravity.BOTTOM));
@@ -48,6 +53,9 @@ public class TouchLockOverlayTest {
             tap(root, 50, 50);
             assertEquals(0, playbackTouches.get());
             tap(root, 350, 350);
+            assertTrue(unlockTouches.get() > 0);
+            // Unattached views queue performClick until attachment; execute that callback here.
+            unlock.performClick();
             assertEquals(View.GONE, overlay.getVisibility());
             tap(root, 50, 50);
             assertTrue(playbackTouches.get() > 0);

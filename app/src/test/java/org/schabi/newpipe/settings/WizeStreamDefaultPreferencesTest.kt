@@ -83,6 +83,20 @@ class WizeStreamDefaultPreferencesTest {
     }
 
     @Test
+    fun `resetting settings retains playlist organization`() {
+        val key = org.schabi.newpipe.local.bookmark.PlaylistCategories.PREFERENCE_KEY
+        val categories = "{\"categories\":[],\"memberships\":{}}"
+        `when`(preferences.getString(key, null)).thenReturn(categories)
+        WizeStreamDefaultPreferences.applyDefaults(
+            "{}".byteInputStream(),
+            preferences,
+            clearFirst = true
+        )
+        verify(editor).clear()
+        verify(editor).putString(key, categories)
+    }
+
+    @Test
     fun `bundled WizeStream defaults include accepted baseline values`() {
         val defaultsPath = listOf(
             Path.of("src/main/res/raw/wizestream_default_preferences.json"),

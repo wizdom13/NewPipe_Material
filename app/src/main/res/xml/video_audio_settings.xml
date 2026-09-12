@@ -91,21 +91,21 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false">
 
-    <SwitchPreferenceCompat
-        android:key="audio_loudness_normalization"
-        android:title="@string/audio_loudness_normalization"
-        android:summary="@string/audio_loudness_normalization_summary"
-        android:defaultValue="false"
-        app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:key="audio_loudness_normalization"
+            android:title="@string/audio_loudness_normalization"
+            android:summary="@string/audio_loudness_normalization_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
 
-    <SwitchPreferenceCompat
-        android:key="audio_dynamic_compression"
-        android:title="@string/audio_dynamic_compression"
-        android:summary="@string/audio_dynamic_compression_summary"
-        android:defaultValue="false"
-        app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:key="audio_dynamic_compression"
+            android:title="@string/audio_dynamic_compression"
+            android:summary="@string/audio_dynamic_compression_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
 
-    <Preference
+        <Preference
             android:key="@string/equalizer_settings_key"
             android:summary="@string/equalizer_settings_summary_disabled"
             android:title="@string/equalizer"

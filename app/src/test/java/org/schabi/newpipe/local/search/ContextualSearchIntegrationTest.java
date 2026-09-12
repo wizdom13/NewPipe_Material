@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import org.schabi.newpipe.local.bookmark.PlaylistCategories;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,14 +49,12 @@ public class ContextualSearchIntegrationTest {
     }
 
     @Test
-    public void bookmarkFilteringProtectsCanonicalOrdering() throws Exception {
-        final String source = read(
-                "org/schabi/newpipe/local/bookmark/BookmarkFragment.java");
-
-        assertTrue(source.contains("captureCanonicalOrderFromAdapter();"));
-        assertTrue(source.contains(
-                "itemListAdapter.setUseItemHandle(!isContextualSearchActive())"));
-        assertTrue(source.contains("itemListAdapter == null || isContextualSearchActive()"));
+    public void bookmarkFilteringProtectsCanonicalOrdering() {
+        assertTrue(PlaylistCategories.allowsReordering(false, PlaylistCategories.ALL));
+        assertFalse(PlaylistCategories.allowsReordering(true, PlaylistCategories.ALL));
+        assertFalse(PlaylistCategories.allowsReordering(false, "a-category"));
+        assertFalse(PlaylistCategories.allowsReordering(true, "a-category"));
+        assertFalse(PlaylistCategories.allowsReordering(false, PlaylistCategories.UNCATEGORIZED));
     }
 
     @Test
