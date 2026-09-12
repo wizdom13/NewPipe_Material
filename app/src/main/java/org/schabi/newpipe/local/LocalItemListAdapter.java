@@ -259,7 +259,11 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.useItemHandle = useItemHandle;
     }
 
-    /** Controls dragging without changing the bookmark row layout. Rebind after updating. */
+    /**
+     * Controls dragging without changing the bookmark layout. Rebind after updating.
+     *
+     * @param enabled whether bookmark drag handles should be visible and enabled
+     */
     public void setItemHandleEnabled(final boolean enabled) {
         itemHandleEnabled = enabled;
     }
