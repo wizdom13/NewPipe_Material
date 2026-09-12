@@ -131,6 +131,7 @@ open class App :
 
         configureRxJavaErrorHandler()
         initializeDeviceSyncScheduling()
+        org.schabi.newpipe.settings.export.ScheduledBackupWorker.schedule(this)
         initializeDeviceSyncListener()
     }
 

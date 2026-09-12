@@ -13,6 +13,11 @@ import org.schabi.newpipe.extractor.utils.ExtractorHelper;
 import java.io.IOException;
 
 public final class CommentsInfo extends ListInfo<CommentsInfoItem> {
+    private CommentSortOrder sortOrder = CommentSortOrder.TOP;
+
+    public CommentSortOrder getSortOrder() {
+        return sortOrder;
+    }
 
     private CommentsInfo(
             final int serviceId,
@@ -30,6 +35,16 @@ public final class CommentsInfo extends ListInfo<CommentsInfoItem> {
         return getInfo(service.getCommentsExtractor(url));
     }
 
+    public static CommentsInfo getInfo(final StreamingService service, final String url,
+                                      final CommentSortOrder sortOrder)
+            throws ExtractionException, IOException {
+        final CommentsExtractor extractor = service.getCommentsExtractor(url);
+        if (extractor != null) {
+            extractor.setSortOrder(sortOrder);
+        }
+        return getInfo(extractor);
+    }
+
     public static CommentsInfo getInfo(final CommentsExtractor commentsExtractor)
             throws IOException, ExtractionException {
         // for services which do not have a comments extractor
@@ -44,6 +59,7 @@ public final class CommentsInfo extends ListInfo<CommentsInfoItem> {
         final ListLinkHandler listUrlIdHandler = commentsExtractor.getLinkHandler();
 
         final CommentsInfo commentsInfo = new CommentsInfo(serviceId, listUrlIdHandler, name);
+        commentsInfo.sortOrder = commentsExtractor.getSortOrder();
         commentsInfo.setCommentsExtractor(commentsExtractor);
         final InfoItemsPage<CommentsInfoItem> initialCommentsPage =
                 ExtractorHelper.getItemsPageOrLogError(commentsInfo, commentsExtractor);

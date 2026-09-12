@@ -75,6 +75,8 @@ import org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty
 import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.info_list.ItemViewMode
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog
+import org.schabi.newpipe.info_list.dialog.StreamDialogEntry
+import org.schabi.newpipe.info_list.StreamSelectionController
 import org.schabi.newpipe.ktx.animate
 import org.schabi.newpipe.ktx.animateHideRecyclerViewAllowingScrolling
 import org.schabi.newpipe.ktx.slideUp
@@ -123,6 +125,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     var feedHeaderExpanded = true
 
     private lateinit var groupAdapter: GroupieAdapter
+    private var streamSelection: StreamSelectionController? = null
 
     private lateinit var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private var updateListViewModeOnResume = false
@@ -178,6 +181,24 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             setOnItemClickListener(listenerStreamItem)
             setOnItemLongClickListener(listenerStreamItem)
         }
+        streamSelection = StreamSelectionController(
+            this,
+            feedBinding.itemsList,
+            {
+                (0 until groupAdapter.itemCount).mapNotNull { position ->
+                    (groupAdapter.getItem(position) as? StreamItem)
+                        ?.streamWithState?.stream?.toStreamInfoItem()
+                }
+            },
+            { position ->
+                if (position in 0 until groupAdapter.itemCount) {
+                    (groupAdapter.getItem(position) as? StreamItem)
+                        ?.streamWithState?.stream?.toStreamInfoItem()
+                } else {
+                    null
+                }
+            }
+        )
 
         val restoreFeedHeaderExpanded = feedHeaderExpanded
         feedBinding.feedHeader.addOnOffsetChangedListener(feedHeaderOffsetListener)
@@ -390,6 +411,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyView() {
+        streamSelection?.destroy()
+        streamSelection = null
         PreferenceManager.getDefaultSharedPreferences(requireContext())
             .unregisterOnSharedPreferenceChangeListener(onSettingsChangeListener)
 
@@ -503,13 +526,19 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         val activity: Activity? = getActivity()
         if (context == null || context.resources == null || activity == null) return
 
-        InfoItemDialog.Builder(activity, context, this, item).create().show()
+        InfoItemDialog.Builder(activity, context, this, item)
+            .addEntry(StreamDialogEntry(R.string.stream_select) { _, selected ->
+                streamSelection?.start(selected)
+            }).create().show()
     }
 
     private val listenerStreamItem = object : OnItemClickListener, OnItemLongClickListener {
         override fun onItemClick(item: Item<*>, view: View) {
             if (item is StreamItem && !isRefreshing) {
                 val stream = item.streamWithState.stream
+                if (streamSelection?.toggleIfActive(stream.toStreamInfoItem()) == true) {
+                    return
+                }
                 if (stream.requiresMembership) {
                     MembersOnlyContentHelper.showExplanation(requireContext())
                     return
@@ -539,6 +568,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         override fun onItemLongClick(item: Item<*>, view: View): Boolean {
             if (item is StreamItem && !isRefreshing) {
+                if (streamSelection?.toggleIfActive(
+                        item.streamWithState.stream.toStreamInfoItem()
+                    ) == true
+                ) {
+                    return true
+                }
                 showInfoItemDialog(item.streamWithState.stream.toStreamInfoItem())
                 return true
             }
@@ -649,6 +684,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         val oldOldestSubscriptionUpdate = oldestSubscriptionUpdate
 
         groupAdapter.updateAsync(displayedItems, false) {
+            streamSelection?.refresh()
             if (restoreListState) {
                 oldOldestSubscriptionUpdate?.run {
                     highlightNewItemsAfter(oldOldestSubscriptionUpdate)

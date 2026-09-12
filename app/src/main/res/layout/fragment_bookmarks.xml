@@ -5,8 +5,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <LinearLayout
+        android:id="@+id/playlist_category_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playlist_category_filter"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/playlist_categories_all" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playlist_category_manage"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/playlist_categories" />
+    </LinearLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/items_list"
+        android:layout_below="@id/playlist_category_controls"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical"

@@ -219,6 +219,11 @@ public final class InfoItemDialog {
             return this;
         }
 
+        public Builder addEntry(@NonNull final StreamDialogEntry entry) {
+            entries.add(entry);
+            return this;
+        }
+
         /**
          * Adds new entries. These are appended to the current entry list.
          * @param newEntries the entries to add

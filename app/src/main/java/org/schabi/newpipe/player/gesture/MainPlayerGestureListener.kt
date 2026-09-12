@@ -64,6 +64,10 @@ class MainPlayerGestureListener(
     private var twoFingerStartTranslationY = 0f
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        if (playerUi.isTouchLocked) {
+            v.parent?.requestDisallowInterceptTouchEvent(true)
+            return true
+        }
         if (handleTwoFingerGesture(v, event)) {
             return true
         }

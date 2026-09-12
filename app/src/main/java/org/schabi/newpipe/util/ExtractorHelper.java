@@ -46,6 +46,7 @@ import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
+import org.schabi.newpipe.extractor.comments.CommentSortOrder;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 import org.schabi.newpipe.extractor.kiosk.KioskInfo;
@@ -390,10 +391,19 @@ public final class ExtractorHelper {
     public static Single<CommentsInfo> getCommentsInfo(final int serviceId,
                                                        final String url,
                                                        final boolean forceLoad) {
+        return getCommentsInfo(serviceId, url, forceLoad, CommentSortOrder.TOP);
+    }
+
+    public static Single<CommentsInfo> getCommentsInfo(final int serviceId,
+                                                       final String url,
+                                                       final boolean forceLoad,
+                                                       final CommentSortOrder sortOrder) {
         checkServiceId(serviceId);
-        return checkCache(forceLoad, serviceId, url, InfoCache.Type.COMMENTS,
+        final String cacheKey = sortOrder == CommentSortOrder.TOP ? url
+                : url + "#comments-sort=" + sortOrder.name();
+        return checkCache(forceLoad, serviceId, cacheKey, InfoCache.Type.COMMENTS,
                 Single.fromCallable(() ->
-                        CommentsInfo.getInfo(NewPipe.getService(serviceId), url)));
+                        CommentsInfo.getInfo(NewPipe.getService(serviceId), url, sortOrder)));
     }
 
     public static Single<InfoItemsPage<CommentsInfoItem>> getMoreCommentItems(

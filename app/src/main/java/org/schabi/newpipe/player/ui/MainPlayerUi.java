@@ -101,6 +101,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private static final int DETAIL_TITLE_TEXT_SIZE_TABLET = 15; // sp
 
     private boolean isFullscreen = false;
+    private boolean touchLocked;
     private boolean isVerticalVideo = false;
     private boolean fragmentIsVisible = false;
 
@@ -124,6 +125,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     public MainPlayerUi(@NonNull final Player player,
                         @NonNull final PlayerBinding playerBinding) {
         super(player, playerBinding);
+        binding.touchLockButton.setOnClickListener(view -> setTouchLocked(true));
+        binding.touchUnlockButton.setOnClickListener(view -> setTouchLocked(false));
     }
 
     /**
@@ -298,6 +301,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroy() {
+        setTouchLocked(false);
         super.destroy();
 
         // Exit from fullscreen when user closes the player via notification
@@ -322,6 +326,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void smoothStopForImmediateReusing() {
+        setTouchLocked(false);
         super.smoothStopForImmediateReusing();
         // Android TV will handle back button in case controls will be visible
         // (one more additional unneeded click while the player is hidden)
@@ -338,6 +343,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     protected void setupElementsVisibility() {
         super.setupElementsVisibility();
+        binding.touchLockButton.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
 
         closeItemsList();
         showHideKodiButton();
@@ -1011,6 +1017,37 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         return super.onKeyDown(keyCode);
     }
+
+    public boolean isTouchLocked() {
+        return touchLocked;
+    }
+
+    private void setTouchLocked(final boolean locked) {
+        touchLocked = locked && isFullscreen;
+        binding.touchLockOverlay.setVisibility(touchLocked ? View.VISIBLE : View.GONE);
+        binding.playbackControlRoot.setImportantForAccessibility(touchLocked
+                ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+        if (touchLocked) {
+            closeItemsList();
+            hideControls(0, 0);
+            binding.touchUnlockButton.requestFocus();
+        }
+    }
+
+    @Override
+    public void showControls(final long duration) {
+        if (!touchLocked) {
+            super.showControls(duration);
+        }
+    }
+
+    @Override
+    public void showControlsThenHide() {
+        if (!touchLocked) {
+            super.showControlsThenHide();
+        }
+    }
     //endregion
 
 
@@ -1072,6 +1109,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
 
         isFullscreen = fullscreen;
+        if (!fullscreen) {
+            setTouchLocked(false);
+        }
+        binding.touchLockButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
         if (isFullscreen) {
             // Android needs tens milliseconds to send new insets but a user is able to see
             // how controls changes it's position from `0` to `nav bar height` padding.

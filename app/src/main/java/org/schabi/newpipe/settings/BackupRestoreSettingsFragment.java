@@ -32,6 +32,7 @@ import org.schabi.newpipe.settings.export.BackupFileLocator;
 import org.schabi.newpipe.settings.export.ImportExportManager;
 import org.schabi.newpipe.settings.export.NewPipeCompatibleExportManager;
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager;
+import org.schabi.newpipe.settings.export.ScheduledBackupWorker;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -79,6 +80,23 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private SubscriptionsImportExportHelper importExportHelper;
     private NewPipeDataMigrationManager migrationManager;
     private NewPipeCompatibleExportManager compatibleExportManager;
+    private final ActivityResultLauncher<Uri> requestBackupDirectory =
+            registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
+                if (uri == null) {
+                    return;
+                }
+                try {
+                    requireContext().getContentResolver().takePersistableUriPermission(uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    defaultPreferences.edit()
+                            .putString(ScheduledBackupWorker.DIRECTORY_KEY, uri.toString()).apply();
+                    ScheduledBackupWorker.schedule(requireContext());
+                    updateAutomaticBackupSummary();
+                } catch (final SecurityException error) {
+                    showErrorSnackbar(error, "Selecting automatic backup folder");
+                }
+            });
 
 
     @Override
@@ -97,6 +115,25 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         importExportDataPathKey = getString(R.string.import_export_data_path);
 
         addPreferencesFromResourceRegistry();
+        requirePreference(R.string.automatic_backup_directory_key)
+                .setOnPreferenceClickListener(preference -> {
+                    requestBackupDirectory.launch(null);
+                    return true;
+                });
+        requirePreference(R.string.automatic_backup_interval_key)
+                .setOnPreferenceChangeListener((preference, value) -> {
+                    if (!"off".equals(value) && defaultPreferences.getString(
+                            ScheduledBackupWorker.DIRECTORY_KEY, "").isEmpty()) {
+                        Toast.makeText(requireContext(), R.string.automatic_backup_choose_folder,
+                                Toast.LENGTH_LONG).show();
+                        requestBackupDirectory.launch(null);
+                        return false;
+                    }
+                    defaultPreferences.edit().putString(ScheduledBackupWorker.INTERVAL_KEY,
+                            (String) value).apply();
+                    ScheduledBackupWorker.schedule(requireContext());
+                    return true;
+                });
 
         final Preference importDataPreference = requirePreference(R.string.import_data);
         importDataPreference.setOnPreferenceClickListener((Preference p) -> {
@@ -190,6 +227,27 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
             return true;
         });
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateAutomaticBackupSummary();
+    }
+
+    private void updateAutomaticBackupSummary() {
+        final Preference directory = requirePreference(R.string.automatic_backup_directory_key);
+        final String uri = defaultPreferences.getString(ScheduledBackupWorker.DIRECTORY_KEY, "");
+        directory.setSummary(uri.isEmpty() ? getString(R.string.automatic_backup_choose_folder)
+                : Uri.decode(uri));
+        final Preference status = requirePreference(R.string.automatic_backup_status_key);
+        final long timestamp = defaultPreferences.getLong(
+                ScheduledBackupWorker.LAST_SUCCESS_KEY, 0);
+        status.setSummary(defaultPreferences.getBoolean(ScheduledBackupWorker.FAILED_KEY, false)
+                ? getString(R.string.automatic_backup_failed)
+                : timestamp == 0 ? getString(R.string.automatic_backup_waiting)
+                : getString(R.string.automatic_backup_last_success,
+                        java.text.DateFormat.getDateTimeInstance().format(new Date(timestamp))));
     }
 
     private void requestExportPathResult(final ActivityResult result) {

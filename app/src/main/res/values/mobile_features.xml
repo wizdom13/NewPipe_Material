@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="automatic_backup_directory_key" translatable="false">automatic_backup_directory</string>
+    <string name="automatic_backup_interval_key" translatable="false">automatic_backup_interval</string>
+    <string name="automatic_backup_status_key" translatable="false">automatic_backup_status</string>
+    <string name="automatic_backup_title">Automatic backups</string>
+    <string name="automatic_backup_folder">Backup folder</string>
+    <string name="automatic_backup_choose_folder">Choose a folder before enabling automatic backups</string>
+    <string name="automatic_backup_frequency">Backup frequency</string>
+    <string name="automatic_backup_retention">Keep the latest 7 automatic backups</string>
+    <string name="automatic_backup_waiting">No automatic backup yet. Android schedules backups when battery and storage allow.</string>
+    <string name="automatic_backup_failed">The last backup failed. Check the folder permission and available space.</string>
+    <string name="automatic_backup_last_success">Last successful backup: %1$s</string>
+    <string-array name="automatic_backup_intervals">
+        <item>Off</item>
+        <item>Daily</item>
+        <item>Weekly</item>
+    </string-array>
+    <string-array name="automatic_backup_interval_values" translatable="false">
+        <item>off</item>
+        <item>daily</item>
+        <item>weekly</item>
+    </string-array>
+    <string name="player_touch_lock">Lock touch controls</string>
+    <string name="player_touch_unlock">Unlock</string>
+    <string name="audio_loudness_normalization">Loudness normalization</string>
+    <string name="audio_loudness_normalization_summary">Gradually level quiet and loud audio during playback</string>
+    <string name="audio_dynamic_compression">Dynamic range compression</string>
+    <string name="audio_dynamic_compression_summary">Reduce loud peaks for more comfortable listening</string>
+    <string name="comments_sort_top">Top</string>
+    <string name="comments_sort_newest">Newest</string>
+    <string name="stream_select">Select</string>
+    <string name="stream_select_all_loaded">Select all loaded videos</string>
+    <string name="stream_selection_count">%1$d selected</string>
+    <item name="selection_all" type="id" />
+    <item name="selection_enqueue" type="id" />
+    <item name="selection_playlist" type="id" />
+    <item name="selection_download" type="id" />
+    <string name="playlist_categories">Categories</string>
+    <string name="playlist_categories_all">All playlists</string>
+    <string name="playlist_uncategorized">Uncategorized</string>
+    <string name="playlist_move_to_category">Move to category</string>
+    <string name="playlist_category_create">New category</string>
+    <string name="playlist_category_name_error">Choose a unique name of 1 to 80 characters</string>
+    <string name="playlist_category_delete_message">Delete this category? Its playlists will move to Uncategorized.</string>
+</resources>
