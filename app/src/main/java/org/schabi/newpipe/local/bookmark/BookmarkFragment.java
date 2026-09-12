@@ -1,7 +1,6 @@
 package org.schabi.newpipe.local.bookmark;
 
 import static org.schabi.newpipe.local.bookmark.MergedPlaylistManager.getMergedOrderedPlaylists;
-import static org.schabi.newpipe.util.ThemeHelper.shouldUseGridLayout;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -18,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -151,7 +151,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 .setOnClickListener(view -> manageCategories());
         updateCategoryLabel();
 
-        itemListAdapter.setUseItemHandle(!isPlaylistListFiltered());
+        itemListAdapter.setUseItemHandle(true);
+        itemListAdapter.setItemHandleEnabled(!isPlaylistListFiltered());
     }
 
     @Override
@@ -325,7 +326,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         }
 
         itemListAdapter.clearStreamItemList();
-        itemListAdapter.setUseItemHandle(!isPlaylistListFiltered());
+        itemListAdapter.setItemHandleEnabled(!isPlaylistListFiltered());
         setEmptyStateMessage(isPlaylistListFiltered()
                 ? R.string.search_no_results : R.string.empty_list_subtitle);
 
@@ -530,11 +531,19 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private ItemTouchHelper.SimpleCallback getItemTouchCallback() {
-        int directions = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-        if (shouldUseGridLayout(requireContext())) {
-            directions |= ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
-        }
-        return new ItemTouchHelper.SimpleCallback(directions, ItemTouchHelper.ACTION_STATE_IDLE) {
+        return new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN,
+                ItemTouchHelper.ACTION_STATE_IDLE) {
+            @Override
+            public int getDragDirs(@NonNull final RecyclerView recyclerView,
+                                   @NonNull final RecyclerView.ViewHolder viewHolder) {
+                if (isPlaylistListFiltered()) {
+                    return 0;
+                }
+                final int directions = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                return recyclerView.getLayoutManager() instanceof GridLayoutManager
+                        ? directions | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT : directions;
+            }
+
             @Override
             public int interpolateOutOfBoundsScroll(@NonNull final RecyclerView recyclerView,
                                                     final int viewSize,

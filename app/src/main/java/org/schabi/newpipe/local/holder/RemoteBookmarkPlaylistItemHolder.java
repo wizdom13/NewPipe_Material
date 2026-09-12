@@ -20,8 +20,8 @@ public class RemoteBookmarkPlaylistItemHolder extends RemotePlaylistItemHolder {
         this(infoItemBuilder, R.layout.list_playlist_bookmark_item, parent);
     }
 
-    RemoteBookmarkPlaylistItemHolder(final LocalItemBuilder infoItemBuilder, final int layoutId,
-                                     final ViewGroup parent) {
+    public RemoteBookmarkPlaylistItemHolder(final LocalItemBuilder infoItemBuilder,
+                                            final int layoutId, final ViewGroup parent) {
         super(infoItemBuilder, layoutId, parent);
         itemHandleView = itemView.findViewById(R.id.itemHandle);
     }
