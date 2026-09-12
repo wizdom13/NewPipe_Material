@@ -4,6 +4,34 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.17.0 (`1017000`)
+
+### New features
+
+- Added scheduled automatic backups and NewPipe-compatible data export.
+- Added a fullscreen touch lock to prevent accidental player gestures.
+- Added multi-select actions in search results, channel pages, and feeds.
+- Added playlist categories to organize and filter bookmarked playlists.
+- Added optional loudness normalization and compression for more consistent audio levels.
+- Added **Top** and **Newest** sorting for YouTube comments.
+
+### Improvements
+
+- Made All playlists and category/search results follow the selected List, Card, or Grid view mode.
+- Matched bookmark backgrounds, category controls, and rounded thumbnails to the active app theme.
+- Preserved playlist layouts while filtering and kept drag-to-reorder available in every view mode
+  when viewing all playlists.
+
+### Fixes
+
+- Improved recovery for YouTube livestreams that provide only a streaming manifest.
+- Kept Shorts auto-queues limited to short-form videos.
+- Fixed a crash when opening the playback queue in landscape.
+- Fixed phones being incorrectly detected as desktop windows when entering fullscreen.
+- Corrected the theme used by copy-notification toasts on older Android versions.
+
+[View the complete changes since v1.16.1](https://github.com/wizdom13/WizeStream/compare/v1.16.1...v1.17.0)
+
 ## WizeStream 1.16.1 (`1016001`)
 
 ### New features
