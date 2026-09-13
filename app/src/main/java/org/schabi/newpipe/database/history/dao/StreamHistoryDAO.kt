@@ -19,9 +19,6 @@ import org.schabi.newpipe.database.stream.StreamStatisticsEntry
 @Dao
 abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
 
-    @Query("SELECT EXISTS(SELECT 1 FROM stream_history WHERE stream_id = :streamId AND access_date = :date)")
-    abstract fun hasTakeoutEvent(streamId: Long, date: OffsetDateTime): Boolean
-
     @Query("SELECT * FROM stream_history")
     abstract override fun getAll(): Flowable<List<StreamHistoryEntity>>
 
@@ -65,4 +62,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
         """
     )
     abstract fun getStatistics(): Flowable<MutableList<StreamStatisticsEntry>>
+    @Query("SELECT EXISTS(SELECT 1 FROM stream_history WHERE stream_id = :streamId AND access_date = :date)")
+    abstract fun hasTakeoutEvent(streamId: Long, date: OffsetDateTime): Boolean
+
 }

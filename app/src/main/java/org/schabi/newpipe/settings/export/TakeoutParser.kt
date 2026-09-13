@@ -53,6 +53,7 @@ internal object TakeoutParser {
                     }
                     playlists.add(TakeoutPlaylist(playlistName?.takeIf { it.isNotBlank() } ?: name.substringAfterLast('/').removeSuffix(".csv").removeSuffix("-videos"), videos))
                 }
+
                 "json" -> {
                     for (entry in JsonParser.array().from(text)) {
                         val row = entry as? JsonObject ?: continue
@@ -61,6 +62,7 @@ internal object TakeoutParser {
                         if (video != null && time != null) history.add(TakeoutWatch(video, time)) else skipped++
                     }
                 }
+
                 "html" -> {
                     for (cell in Jsoup.parse(text).select("div.content-cell")) {
                         val link = cell.select("a[href]").firstOrNull { video(it.attr("href"), "") != null } ?: continue
@@ -102,7 +104,9 @@ internal object TakeoutParser {
     private fun htmlTime(value: String): Long? {
         val text = value.trim().replace('\u202f', ' ').replace('\u00a0', ' ')
         return runCatching { Instant.parse(text).toEpochMilli() }.getOrNull() ?: listOf(
-            "MMM d, uuuu, h:mm:ss a z", "MMM d, uuuu, HH:mm:ss z", "d MMM uuuu, HH:mm:ss z"
+            "MMM d, uuuu, h:mm:ss a z",
+            "MMM d, uuuu, HH:mm:ss z",
+            "d MMM uuuu, HH:mm:ss z"
         ).firstNotNullOfOrNull { pattern ->
             runCatching { ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(pattern, Locale.US)).toInstant().toEpochMilli() }.getOrNull()
         }
@@ -122,12 +126,15 @@ internal object TakeoutParser {
                     value.append('"')
                     i++
                 }
+
                 char == '"' -> quoted = !quoted
+
                 char == ',' && !quoted -> {
                     row.add(value.toString())
                     require(row.size <= 1000) { "Too many CSV columns." }
                     value.setLength(0)
                 }
+
                 (char == '\n' || char == '\r') && !quoted -> {
                     row.add(value.toString())
                     rows.add(row)
@@ -136,6 +143,7 @@ internal object TakeoutParser {
                     value.setLength(0)
                     if (char == '\r' && i < text.length && text[i] == '\n') i++
                 }
+
                 else -> value.append(char)
             }
         }
