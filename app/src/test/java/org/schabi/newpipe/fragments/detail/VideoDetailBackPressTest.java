@@ -88,9 +88,15 @@ public class VideoDetailBackPressTest {
 
     @After
     public void tearDown() {
-        playerHelper.close();
-        deviceUtils.close();
-        log.close();
+        if (playerHelper != null) {
+            playerHelper.close();
+        }
+        if (deviceUtils != null) {
+            deviceUtils.close();
+        }
+        if (log != null) {
+            log.close();
+        }
     }
 
     @Test
