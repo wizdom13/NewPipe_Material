@@ -62,7 +62,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
         """
     )
     abstract fun getStatistics(): Flowable<MutableList<StreamStatisticsEntry>>
+
     @Query("SELECT EXISTS(SELECT 1 FROM stream_history WHERE stream_id = :streamId AND access_date = :date)")
     abstract fun hasTakeoutEvent(streamId: Long, date: OffsetDateTime): Boolean
-
 }
