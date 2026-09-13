@@ -58,8 +58,12 @@ internal class PlayerStreamController(
 
     fun sourceOfDownloaded(item: PlayQueueItem): MediaSource? {
         val info = org.schabi.newpipe.download.DownloadedCopyRepository.find(
-            context, item.serviceId, item.url, item.title,
-            player.audioPlayerSelected() || player.isAudioOnly, item
+            context,
+            item.serviceId,
+            item.url,
+            item.title,
+            player.audioPlayerSelected() || player.isAudioOnly,
+            item
         ) ?: return null
         return downloadedSource(info)
     }
