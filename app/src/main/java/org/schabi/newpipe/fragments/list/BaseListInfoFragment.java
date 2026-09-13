@@ -219,7 +219,11 @@ public abstract class BaseListInfoFragment<I extends InfoItem, L extends ListInf
         return Page.isValid(currentNextPage);
     }
 
-    /** Produces display items without modifying cached extractor results. */
+    /**
+     * Produces display items without modifying cached extractor results.
+     * @param items original items from the extractor
+     * @return items to display
+     */
     protected List<I> getDisplayItems(final List<I> items) {
         return items;
     }
