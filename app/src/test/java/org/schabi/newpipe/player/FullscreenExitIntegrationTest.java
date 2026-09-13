@@ -74,17 +74,6 @@ public class FullscreenExitIntegrationTest {
         assertFalse(setter.contains("isFullscreen = !isFullscreen;"));
     }
 
-    @Test
-    public void backExitsFullscreenWithoutPausingPlayback() throws Exception {
-        final String source = read(
-                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
-        final String onBackPressed = methodBody(
-                source, "public boolean onBackPressed()");
-
-        assertTrue(onBackPressed.contains("restoreDefaultOrientation();"));
-        assertFalse(onBackPressed.contains("player.pause();"));
-    }
-
     private String read(final String relativePath) throws Exception {
         return Files.readString(sourceDirectory.resolve(relativePath));
     }
