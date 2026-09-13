@@ -1053,7 +1053,10 @@ public final class VideoDetailFragment
 
         // If we are in fullscreen mode just exit from it via first back press
         if (isFullscreen()) {
-            restoreDefaultOrientation();
+            // Keep the orientation request and fullscreen state in sync, as the minimize button
+            // does. A direct toggle is undone when the still-landscape surface is reattached.
+            player.UIs().get(MainPlayerUi.class)
+                    .ifPresent(MainPlayerUi::toggleFullscreenWithOrientation);
             setAutoPlay(false);
             return true;
         }
