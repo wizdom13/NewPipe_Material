@@ -412,6 +412,11 @@ public class DownloadManagerService extends Service {
         final DownloadMission mission = new DownloadMission(urls, storage, kind, ps);
         mission.threadCount = threads;
         mission.source = streamInfo.getUrl();
+        if (Postprocessing.ALGORITHM_SEGMENTS.equals(psName)) {
+            // Keep partial exports distinguishable from complete offline copies.
+            mission.source += (mission.source.contains("#") ? "&" : "#")
+                    + "wizestream-segments=" + psArgs[0];
+        }
         mission.nearLength = nearLength;
         mission.recoveryInfo = recovery.toArray(new MissionRecoveryInfo[0]);
 
