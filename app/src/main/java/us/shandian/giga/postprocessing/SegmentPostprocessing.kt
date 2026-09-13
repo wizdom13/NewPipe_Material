@@ -102,7 +102,9 @@ internal class SegmentPostprocessing : Postprocessing(false, false, ALGORITHM_SE
                 transformer = Transformer.Builder(App.instance).setLooper(thread.looper)
                     .setVideoMimeType(MimeTypes.VIDEO_H264).setAudioMimeType(MimeTypes.AUDIO_AAC)
                     .addListener(object : Transformer.Listener {
-                        override fun onCompleted(composition: Composition, exportResult: ExportResult) { done.countDown() }
+                        override fun onCompleted(composition: Composition, exportResult: ExportResult) {
+                            done.countDown()
+                        }
                         override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
                             failure.set(exportException)
                             done.countDown()

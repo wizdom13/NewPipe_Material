@@ -48,9 +48,9 @@ import org.schabi.newpipe.util.SimpleOnSeekBarChangeListener
 import org.schabi.newpipe.util.StreamItemAdapter
 import org.schabi.newpipe.util.StreamItemAdapter.StreamInfoWrapper
 import org.schabi.newpipe.util.ThemeHelper
+import us.shandian.giga.postprocessing.Postprocessing
 import us.shandian.giga.service.DownloadManager
 import us.shandian.giga.service.DownloadManagerService
-import us.shandian.giga.postprocessing.Postprocessing
 
 class DownloadDialog() :
     DialogFragment(),
