@@ -40,7 +40,8 @@ object AutomaticDownloads {
             .setRequiresStorageNotLow(true)
             .build()
         manager.enqueueUniquePeriodicWork(
-            WORK, ExistingPeriodicWorkPolicy.UPDATE,
+            WORK,
+            ExistingPeriodicWorkPolicy.UPDATE,
             PeriodicWorkRequestBuilder<AutomaticDownloadWorker>(1, TimeUnit.HOURS).setConstraints(constraints).build()
         )
     }
@@ -48,15 +49,23 @@ object AutomaticDownloads {
     @JvmStatic
     fun configure(context: Context, uid: Long, serviceId: Int, url: String, name: String) {
         val current = rules(context).firstOrNull { it.uid == uid }
+        val selected = when {
+            current == null -> 0
+            current.audio -> 1
+            else -> 2
+        }
         val options = arrayOf(context.getString(R.string.automatic_download_off), context.getString(R.string.audio), context.getString(R.string.video))
         MaterialAlertDialogBuilder(context).setTitle(context.getString(R.string.automatic_download_channel_title, name))
-            .setSingleChoiceItems(options, if (current == null) 0 else if (current.audio) 1 else 2) { dialog, index ->
+            .setSingleChoiceItems(options, selected) { dialog, index ->
                 val editor = context.getSharedPreferences(WORK, Context.MODE_PRIVATE).edit()
                 if (index == 0) {
                     editor.remove(uid.toString())
                 } else {
-                    editor.putString(uid.toString(), JSONObject().put("service", serviceId).put("url", url).put("name", name)
-                        .put("audio", index == 1).put("since", current?.since ?: System.currentTimeMillis()).toString())
+                    editor.putString(
+                        uid.toString(),
+                        JSONObject().put("service", serviceId).put("url", url).put("name", name)
+                            .put("audio", index == 1).put("since", current?.since ?: System.currentTimeMillis()).toString()
+                    )
                     PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(ENABLED, true).apply()
                 }
                 editor.apply()

@@ -51,7 +51,9 @@ class AutomaticDownloadWorker(context: Context, parameters: WorkerParameters) : 
                 binder.set(service as DownloadManagerService.DownloadManagerBinder)
                 connected.countDown()
             }
-            override fun onServiceDisconnected(name: ComponentName) { binder.set(null) }
+            override fun onServiceDisconnected(name: ComponentName) {
+                binder.set(null)
+            }
         }
         if (!context.bindService(Intent(context, DownloadManagerService::class.java), connection, Context.BIND_AUTO_CREATE)) throw IOException("Download service unavailable")
         try {
