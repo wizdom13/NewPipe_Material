@@ -40,9 +40,7 @@ object DownloadedCopyRepository {
     }
 
     @JvmStatic
-    fun reject(info: DownloadedStreamInfo) {
-        rejectedCopies.add(info.copyUri)
-    }
+    fun reject(info: DownloadedStreamInfo): Boolean = rejectedCopies.add(info.copyUri)
 
     @JvmStatic
     fun find(context: Context, service: Int, url: String, title: String?, audioOnly: Boolean, item: PlayQueueItem? = null): DownloadedStreamInfo? {
