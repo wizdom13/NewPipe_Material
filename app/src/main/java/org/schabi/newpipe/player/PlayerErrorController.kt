@@ -47,6 +47,13 @@ internal class PlayerErrorController(
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
         player.saveStreamProgressState()
+        val downloaded = player.currentStreamInfo.orElse(null) as? org.schabi.newpipe.download.DownloadedStreamInfo
+        if (downloaded != null) {
+            org.schabi.newpipe.download.DownloadedCopyRepository.reject(downloaded)
+            player.setRecovery()
+            player.reloadPlayQueueManager()
+            return
+        }
         if (tryRecoverFromYouTubeMediaUrlFailure(error)) {
             return
         }
