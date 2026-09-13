@@ -47,8 +47,9 @@ internal object DownloadSegmentDialog {
             .setPositiveButton(R.string.ok, null)
             .create()
         chapterButton.setOnClickListener {
-            val sorted = chapters.filter { it.startTimeSeconds >= 0 && it.startTimeSeconds < duration }
-                .distinctBy { it.startTimeSeconds }.sortedBy { it.startTimeSeconds }.take(100)
+            val allChapters = chapters.filter { it.startTimeSeconds >= 0 && it.startTimeSeconds < duration }
+                .distinctBy { it.startTimeSeconds }.sortedBy { it.startTimeSeconds }
+            val sorted = allChapters.take(100)
             val checked = BooleanArray(sorted.size)
             MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.download_select_chapters)
@@ -56,7 +57,7 @@ internal object DownloadSegmentDialog {
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.ok) { _, _ ->
                     val ranges = sorted.indices.filter { checked[it] }.map { index ->
-                        DownloadSegment(sorted[index].startTimeSeconds * 1000L, (sorted.getOrNull(index + 1)?.startTimeSeconds?.toLong() ?: duration) * 1000)
+                        DownloadSegment(sorted[index].startTimeSeconds * 1000L, (allChapters.getOrNull(index + 1)?.startTimeSeconds?.toLong() ?: duration) * 1000)
                     }
                     if (ranges.isNotEmpty()) {
                         onSelected(DownloadSegments.encode(DownloadSegments.normalize(ranges, duration * 1000)))
