@@ -2,6 +2,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_downloads_title">
+    <SwitchPreferenceCompat
+        android:key="prefer_downloaded_copies"
+        android:defaultValue="true"
+        android:title="@string/prefer_downloaded_copies_title"
+        android:summary="@string/prefer_downloaded_copies_summary"
+        app:singleLineTitle="false" app:iconSpaceReserved="false" />
+
 
     <SwitchPreferenceCompat
         android:defaultValue="false"
@@ -79,10 +86,5 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
-    <SwitchPreferenceCompat
-        android:key="prefer_downloaded_copies"
-        android:defaultValue="true"
-        android:title="@string/prefer_downloaded_copies_title"
-        android:summary="@string/prefer_downloaded_copies_summary"
-        app:singleLineTitle="false" app:iconSpaceReserved="false" />
+
 </PreferenceScreen>
