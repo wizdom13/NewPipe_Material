@@ -22,10 +22,12 @@ class DownloadedCopyLookupTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val file = File.createTempFile("copy-lookup", ".m4a", context.cacheDir).apply { writeBytes(ByteArray(32) { 1 }) }
         val source = "https://www.youtube.com/watch?v=abcdefghijk"
-        val queueItem = PlayQueueItem(StreamInfo(0, "abcdefghijk", source, "Saved").apply {
-            duration = 1
-            streamType = StreamType.AUDIO_STREAM
-        })
+        val queueItem = PlayQueueItem(
+            StreamInfo(0, "abcdefghijk", source, "Saved").apply {
+                duration = 1
+                streamType = StreamType.AUDIO_STREAM
+            }
+        )
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val enabled = prefs.getBoolean(DownloadedCopyRepository.PREFERENCE, true)
         val store = FinishedMissionStore(context)
